@@ -1,0 +1,49 @@
+# GLOSSARY
+Format: - **term** (other forms): definition
+
+- **variable** (variables): A name that refers to a value stored in memory, like `score = 10`.
+- **value** (values): A piece of data, such as a number, some text or `True`.
+- **data type** (data types, type, types): The kind of a value, such as int, float, str, bool or list. It decides what you can do with the value.
+- **integer** (int, ints, integers): A whole number with no decimal point, like `42` or `-7`.
+- **float** (floats, double, doubles): A number with a decimal point, like `3.14`.
+- **string** (strings, str): Text in quotes, like `"hello"`.
+- **boolean** (booleans, bool): A value that is either True or False.
+- **condition** (conditions): An expression that is either True or False. It decides whether an if statement's code runs.
+- **if statement** (if statements, if-statement, selection): Code that runs a block only when its condition is True.
+- **else**: The part of an if statement that runs when the condition is False.
+- **elif** (else if): "Else if". It checks another condition when the earlier ones were False.
+- **comparison operator** (comparison operators, relational operator, relational operators): An operator that compares two values and gives a boolean: `==`, `!=`, `<`, `>`, `<=`, `>=`.
+- **logical operator** (logical operators, boolean operator): `and`, `or` and `not` (or `&&`, `||` and `!`). They combine or flip boolean values.
+- **nested** (nesting): Code placed inside another block, like an if inside another if, or a loop inside a loop.
+- **indentation** (indent, indented): Spaces at the start of a line. In Python, they show which lines belong to a block.
+- **block** (blocks, code block): A group of lines that run together, like the body of an if, a loop or a function.
+- **truthy** (falsy, truthiness): How a value acts in a condition. Falsy values (0, empty text, empty lists, None/null) count as False. Everything else is truthy.
+- **short-circuit** (short-circuiting, short-circuit evaluation): When `and`/`or` stop checking as soon as the answer is known.
+- **conditional expression** (ternary, ternary operator): A one-line if that picks between two values: `a if cond else b` in Python, or `cond ? a : b` in JavaScript and Java.
+- **loop** (loops, iteration, iterate): Code that repeats. `for` loops go through a range or a collection, and `while` loops repeat while a condition is True.
+- **infinite loop**: A loop that never ends because its condition never becomes False.
+- **function** (functions, procedure, procedures): A named, reusable block of code that you call by name.
+- **method** (methods): A function that belongs to an object, called with a dot: `name.upper()`.
+- **parameter** (parameters): A variable in a function definition that receives a value when the function is called.
+- **argument** (arguments): The actual value you pass into a function when you call it.
+- **return** (return value, returns): Sends a value back from a function to the code that called it.
+- **scope**: Where in the code a variable exists and can be used.
+- **list** (lists, array, arrays, ArrayList): An ordered collection of values that you can access by index.
+- **index** (indexes, indices): The position of an item in a list or string. Python, Java and JavaScript start counting at 0. AP pseudocode starts at 1.
+- **dictionary** (dictionaries, dict, hash table, hash map): A collection of key-value pairs, like `{"ada": 36}`.
+- **syntax error** (SyntaxError, syntax errors): An error from code that breaks the language's rules, so it can't run.
+- **runtime error** (runtime errors, exception, exceptions): An error that happens while the program is running, like dividing by zero.
+- **logic error** (logic errors, bug, bugs): The program runs but gives the wrong result.
+- **debugging** (debug): Finding and fixing bugs.
+- **algorithm** (algorithms): A step-by-step set of instructions to solve a problem.
+- **class** (classes): A blueprint for making objects. It defines their data and methods.
+- **object** (objects, instance, instances): A specific thing made from a class.
+- **constructor** (constructors): A special method that sets up a new object.
+- **recursion** (recursive): When a function calls itself. It needs a base case to stop.
+- **base case**: The simple case where a recursive function stops calling itself.
+- **abstraction**: Hiding details so you can use something without knowing how it works inside.
+- **binary**: Base-2 numbers that use only 0 and 1. Every bit is a power of 2.
+- **modulo** (mod, MOD, remainder, modulus): The `%` operator (`MOD` in AP pseudocode). It gives the remainder after division, so `7 % 3` is 1.
+- **concatenation** (concatenate): Joining strings together with `+`.
+- **encryption** (encrypt, decrypt): Scrambling data so only someone with the key can read it.
+- **Big-O** (big o, time complexity): A way to describe how an algorithm's work grows as its input gets bigger.

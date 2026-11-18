@@ -1,0 +1,48 @@
+rules_version = '2';
+// CompciStudy security rules. Paste these into Firebase → Firestore Database → Rules → Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function squad(sid) { return get(/databases/$(database)/documents/squads/$(sid)).data; }
+    function isLeader(sid) { return signedIn() && squad(sid).owner == request.auth.uid; }
+    function isMember(sid) { return signedIn() && exists(/databases/$(database)/documents/squads/$(sid)/members/$(request.auth.uid)); }
+
+    match /squads/{sid} {
+      allow get: if signedIn();            // you must know the 6-letter code to look a squad up
+      allow list: if false;                // nobody can browse all squads
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid
+                    && request.resource.data.name is string && request.resource.data.name.size() <= 40;
+      allow update: if isLeader(sid);
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow read: if isMember(sid);
+        allow create, update: if signedIn() && request.auth.uid == uid
+                    && !(uid in squad(sid).get('banned', []))
+                    && request.resource.data.name is string && request.resource.data.name.size() <= 20;
+        allow delete: if signedIn() && (request.auth.uid == uid || isLeader(sid));
+      }
+      match /questions/{qid} {
+        allow read: if isMember(sid);
+        allow create: if isMember(sid) && request.resource.data.author == request.auth.uid
+                      && (request.resource.data.status == 'pending' || isLeader(sid));
+        allow update: if isLeader(sid)
+                      || (isMember(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reports']));
+        allow delete: if isLeader(sid) || (signedIn() && resource.data.author == request.auth.uid);
+      }
+      match /duels/{did} {
+        allow read, create, update: if isMember(sid);
+        allow delete: if isMember(sid) && (resource.data.host == request.auth.uid || isLeader(sid));
+      }
+      match /assignments/{aid} {
+        allow read: if isMember(sid);
+        allow create, update, delete: if isLeader(sid);
+      }
+      match /weekly/{wid} {
+        allow read: if isMember(sid);
+        allow write: if isMember(sid) && request.resource.data.uid == request.auth.uid
+                     && wid == request.resource.data.week + '_' + request.auth.uid;
+      }
+    }
+  }
+}

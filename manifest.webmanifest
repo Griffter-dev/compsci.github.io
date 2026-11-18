@@ -1,0 +1,13 @@
+{
+  "name": "CompciStudy",
+  "short_name": "CompciStudy",
+  "description": "Study high school computer science: courses, quizzes, games and squads.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#050407",
+  "theme_color": "#050407",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
