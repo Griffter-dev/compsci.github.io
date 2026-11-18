@@ -29,6 +29,7 @@ for (const c of COURSES) {
     u.course = c.id; u.index = ui; UNIT[u.id] = u;
     for (const q of [...u.quiz, ...u.trace, ...u.bug, ...u.fill]) { q.unit = u.id; q.course = c.id; Q[q.id] = q; }
     for (const e of u.ex) { e.course = c.id; EX[e.id] = e; }
+    for (const l of u.lessons) for (const q of (l.quizzes || [])) { q.unit = u.id; q.course = c.id; Q[q.id] = q; }
   });
 }
 const unitQs = (uid, types = ['quiz', 'trace', 'bug', 'fill']) => { const u = UNIT[uid]; return u ? types.flatMap(t => u[t]) : []; };

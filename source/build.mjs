@@ -86,7 +86,8 @@ function parseCourse(text, file) {
         return `\n<div class="lq" data-lq="${quizzes.length - 1}"></div>\n`;
       });
       const text = md.replace(/<div class="lq"[^>]*><\/div>/g, '').replace(/[`*#>|_-]/g, ' ').replace(/\s+/g, ' ');
-      unit.lessons.push({ title: section.title, mins: section.mins, html: marked.parse(prepMd(md)), text, quizzes });
+      const topic = (section.title.match(/^(\d+\.\d+)\s/) || [])[1] || '';
+      unit.lessons.push({ title: section.title, mins: section.mins, skills: section.skills || [], topic, html: marked.parse(prepMd(md)), text, quizzes });
     } else {
       unit[section.type].push(...parseQuestions(buf, section.type, unit.id + (unit[section.type].length ? 'x' : '')));
     }
@@ -104,9 +105,9 @@ function parseCourse(text, file) {
     if (!inFence && course && !course.blurb && !course.units.length && (m = line.match(/^> (.*)$/))) { course.blurb = m[1]; continue; }
     if (!inFence && (m = line.match(/^## UNIT (.*)$/))) {
       flush();
-      const [id, title] = m[1].split('|').map(s => s.trim());
+      const [id, title, weight] = m[1].split('|').map(s => s.trim());
       if (!course || UNITS_ALL[id]) { unit = UNITS_ALL[id]; if (!unit) errors.push('unknown unit ' + id); continue; }
-      unit = { id, title, lessons: [], ex: [], fill: [], quiz: [], trace: [], bug: [] };
+      unit = { id, title, weight: weight || '', lessons: [], ex: [], fill: [], quiz: [], trace: [], bug: [] };
       UNITS_ALL[id] = unit; course.units.push(unit);
       continue;
     }
@@ -114,7 +115,7 @@ function parseCourse(text, file) {
       flush();
       const type = m[1].toLowerCase();
       section = { type };
-      if (type === 'lesson') { const [t, mins] = m[2].split('|').map(s => s.trim()); section.title = t; section.mins = +mins || 10; }
+      if (type === 'lesson') { const [t, mins, skills] = m[2].split('|').map(s => s.trim()); section.title = t; section.mins = +mins || 10; section.skills = (skills || '').split(',').map(x => x.trim()).filter(Boolean); }
       if (type === 'exercise') { const [t, lang, mins] = m[2].split('|').map(s => s.trim()); Object.assign(section, { title: t, lang, mins }); }
       if (type === 'fill') section.title = m[2].trim();
       continue;
@@ -125,7 +126,29 @@ function parseCourse(text, file) {
   return course;
 }
 
-const files = fs.readdirSync(path.join(ROOT, 'content')).filter(f => f.endsWith('.md') && !/glossary/i.test(f)).sort();
+const files = fs.readdirSync(path.join(ROOT, 'content')).filter(f => f.endsWith('.md') && !/glossary|frq/i.test(f)).sort();
+// ---- FRQs (AP CSA free response practice) ----
+const FRQS = [];
+function parseFrqs(text) {
+  let cur = null, part = null, mode = '', buf = [];
+  const flushScenario = () => { if (cur && mode === 'scenario') { cur.scenario = marked.parse(buf.join('\n').trim()); buf = []; } };
+  const flushPart = () => { if (part) { part.prompt = marked.parse(part.promptLines.join('\n').trim()); part.starter = fence(part.starterLines).code; part.solution = fence(part.solutionLines).code; delete part.promptLines; delete part.starterLines; delete part.solutionLines; const sum = part.rubric.reduce((n, r) => n + r.pts, 0); if (sum !== part.points) errors.push(`${cur.id} part ${part.label}: rubric ${sum} != ${part.points}`); cur.parts.push(part); part = null; } };
+  for (const line of text.split('\n')) {
+    let m;
+    if ((m = line.match(/^## FRQ (.*)$/))) { flushScenario(); flushPart(); if (cur) FRQS.push(cur); const [id, q, type, title] = m[1].split('|').map(s => s.trim()); cur = { id, q: +q, type, title, scenario: '', parts: [] }; mode = ''; continue; }
+    if (!cur) continue;
+    if (/^SCENARIO\s*$/.test(line)) { mode = 'scenario'; buf = []; continue; }
+    if ((m = line.match(/^### PART (\w+)\s*\|\s*(\d+)/))) { flushScenario(); flushPart(); part = { label: m[1], points: +m[2], promptLines: [], starterLines: [], solutionLines: [], rubric: [] }; mode = 'prompt'; continue; }
+    if (part && /^(STARTER|SOLUTION|RUBRIC)\s*$/.test(line)) { mode = line.trim().toLowerCase(); continue; }
+    if (mode === 'scenario') buf.push(line);
+    else if (part && mode === 'prompt') part.promptLines.push(line);
+    else if (part && mode === 'starter') part.starterLines.push(line);
+    else if (part && mode === 'solution') part.solutionLines.push(line);
+    else if (part && mode === 'rubric' && (m = line.match(/^- (\d+)\s*\|\s*(.+)$/))) part.rubric.push({ pts: +m[1], text: m[2].trim() });
+  }
+  flushScenario(); flushPart(); if (cur) FRQS.push(cur);
+}
+for (const f of fs.readdirSync(path.join(ROOT, 'content')).filter(f => /frq/i.test(f)).sort()) parseFrqs(fs.readFileSync(path.join(ROOT, 'content', f), 'utf8'));
 const GLOSSARY = [];
 for (const f of fs.readdirSync(path.join(ROOT, 'content')).filter(f => /glossary/i.test(f))) {
   for (const line of fs.readFileSync(path.join(ROOT, 'content', f), 'utf8').split('\n')) {
@@ -143,10 +166,10 @@ if (process.env.DUMP_EX) fs.writeFileSync(process.env.DUMP_EX, JSON.stringify(co
 if (errors.length) { console.error('CONTENT ERRORS:\n' + errors.join('\n')); process.exit(1); }
 
 const read = f => fs.readFileSync(path.join(ROOT, 'src', f), 'utf8');
-const jsOrder = ['core.js', 'ui.js', 'glossary.js', 'runner.js', 'engine.js', 'views-learn.js', 'views-study.js', 'views-assign.js', 'views-arcade.js', 'squad.js', 'views-squad.js', 'views-me.js', 'main.js'];
+const jsOrder = ['core.js', 'ui.js', 'glossary.js', 'runner.js', 'engine.js', 'views-learn.js', 'views-study.js', 'views-assign.js', 'views-exam.js', 'views-arcade.js', 'squad.js', 'views-squad.js', 'views-me.js', 'main.js'];
 const js = jsOrder.map(f => `// ---- ${f} ----\n` + read(f)).join('\n');
-const contentJs = 'window.COURSES = ' + JSON.stringify(courses).replace(/<\/(script)/gi, '<\\/$1') + ';\nwindow.GLOSSARY = ' + JSON.stringify(GLOSSARY) + ';';
-console.log('glossary terms', GLOSSARY.length);
+const contentJs = 'window.COURSES = ' + JSON.stringify(courses).replace(/<\/(script)/gi, '<\\/$1') + ';\nwindow.GLOSSARY = ' + JSON.stringify(GLOSSARY) + ';\nwindow.FRQS = ' + JSON.stringify(FRQS).replace(/<\/(script)/gi, '<\\/$1') + ';';
+console.log('glossary terms', GLOSSARY.length, '· frqs', FRQS.length, FRQS.map(f => f.id + ':' + f.parts.reduce((n, p) => n + p.points, 0)).join(' '));
 let html = read('index.html')
   .replace('/*__CSS__*/', () => read('styles.css'))
   .replace('/*__CONTENT__*/', () => contentJs)

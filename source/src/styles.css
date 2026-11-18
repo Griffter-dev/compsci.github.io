@@ -419,3 +419,30 @@ dl.gloss{display:grid;gap:10px;margin:0}
 .lesson,.example,.editor,.ex-left,.ex-right{min-width:0;max-width:100%}
 .exm-head{flex-wrap:wrap}
 .lesson-head h1{overflow-wrap:anywhere}
+
+/* ===== Practice exams + FRQs ===== */
+.pill.skill{font-weight:700;color:var(--accent2);cursor:help}
+.exam-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:16px;border-radius:var(--radius);background:var(--bg2);border:1px solid var(--border);position:sticky;top:70px;z-index:5}
+.exam-grid{display:grid;grid-template-columns:1fr 240px;gap:16px;align-items:start}
+@media (max-width:860px){.exam-grid{grid-template-columns:1fr}.exam-top{top:62px}}
+.choice.picked{border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 14%,var(--bg2))}
+.choice.picked .key{background:var(--accent2);color:var(--on-accent)}
+.navgrid{position:sticky;top:150px}
+.nav-nums{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin:10px 0}
+.nav-nums button{aspect-ratio:1;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--fg);font-family:var(--mono);font-size:.75rem;cursor:pointer;padding:0;position:relative}
+.nav-nums button.ans{background:color-mix(in srgb,var(--accent2) 30%,var(--bg3))}
+.nav-nums button.cur{outline:2px solid var(--accent);outline-offset:1px}
+.nav-nums button.flag::after{content:"🚩";position:absolute;top:-7px;right:-5px;font-size:.6rem}
+.btn.flagged{color:var(--warn);border-color:var(--warn)}
+.frq{display:grid;gap:14px}
+.frq-scen .prose,.frq-part .prose{font-size:.98rem}
+.frq-part h3{display:flex;gap:10px;align-items:center}
+.frq-ed{margin-top:10px}
+.frq-reveal{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)}
+.rubric{list-style:none;padding:0;margin:8px 0}
+.rubric li{padding:8px 10px;border-radius:8px;background:var(--bg3);margin-bottom:6px}
+.rubric label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.rubric input{margin-top:5px;accent-color:var(--accent)}
+
+.frq>*,.exam-grid>*,.exam>*{min-width:0}
+.frq .prose table{display:block;overflow-x:auto}
