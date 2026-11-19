@@ -1,4 +1,4 @@
-// CompciStudy service worker: caches the app so it opens offline. Squad data still needs internet.
+// CompSci-Study service worker: caches the app so it opens offline. Squad data still needs internet.
 const CACHE = 'compcistudy-v1';
 const FILES = ['./', './index.html', './firebase-config.js', './manifest.webmanifest', './icon.svg'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CompciStudy · CS, all four years</title>
-<meta name="description" content="CompciStudy: a free study app for high school computer science. Covers Intro Python, Web Dev, AP CSP, AP CSA, Cybersecurity and Data Structures, with quizzes, code challenges, games and squads.">
+<title>CompSci-Study · CS, all four years</title>
+<meta name="description" content="CompSci-Study: a free study app for high school computer science. Covers Intro Python, Web Dev, AP CSP, AP CSA, Cybersecurity and Data Structures, with quizzes, code challenges, games and squads.">
 <meta name="theme-color" content="#050407">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050407'/%3E%3Ctext x='32' y='42' font-family='monospace' font-size='28' font-weight='700' text-anchor='middle' fill='%2339ff88'%3E%3E_%3C/text%3E%3C/svg%3E">
@@ -952,7 +952,7 @@ function renderChrome() {
   const tag = h => h === '/arcade' ? '<span class="tag">2×</span>' : h === '/assignments' && due ? `<span class="tag due">${due}</span>` : '';
   const st = streakAlive(), L = levelFor(S.xp);
   $('#topbar').innerHTML = `
-    <a class="logo" href="#/" aria-label="CompciStudy home"><span class="mark">&gt;_</span><span>Compci<b>Study</b></span></a>
+    <a class="logo" href="#/" aria-label="CompSci-Study home"><span class="mark">&gt;_</span><span>CompSci-<b>Study</b></span></a>
     <nav class="navlinks" aria-label="Main">${DESK_NAV.map(([h, n, i]) => `<a href="#${h === '/feedback' ? '/feedback?from=' + encodeURIComponent(pageLabel()) : h}" class="${active(h) ? 'on' : ''}" title="${n}"><span class="ni" aria-hidden="true">${i}</span><span class="nl">${n}</span>${tag(h)}</a>`).join('')}</nav>
     <div class="topright">
       <button class="chip search-btn" id="search-btn" aria-label="Search lessons, practices and units (shortcut: /)" title="Search  ( / )">🔍 <span class="search-lbl">Search</span><kbd>/</kbd></button>
@@ -987,7 +987,7 @@ function toggleMenu() {
   m.addEventListener('click', e => { if (e.target.closest('a')) m.remove(); });
 }
 function footer() {
-  return `<footer class="footer"><div class="cols"><div><b class="mono">Compci<span style="color:var(--accent)">Study</span></b><br>Made by students, for students. Free forever.</div>
+  return `<footer class="footer"><div class="cols"><div><b class="mono">CompSci-<span style="color:var(--accent)">Study</span></b><br>Made by students, for students. Free forever.</div>
   <div><a href="#/courses">Courses</a><a href="#/assignments">Assignments</a><a href="#/arcade">Arcade</a><a href="#/squad">Squad</a><a href="#/notes">Notes</a><a href="#/glossary">Glossary</a><a href="#/feedback">Feedback</a><a href="#/help">Help & FAQ</a><a href="#/settings">Settings</a></div></div></footer>`;
 }
 
@@ -1466,7 +1466,7 @@ route('/', (view) => {
   <div class="wrap">
     <section class="hero grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:center;gap:40px">
       <div>
-        <span class="eyebrow">$ compcistudy --years 9-12</span>
+        <span class="eyebrow">$ compsci-study --years 9-12</span>
         <h1>${S.profile.name ? `Hey ${esc(S.profile.name)}.<br>` : ''}Computer science, <span class="hl">all four years.</span></h1>
         <p class="lead">Notes, practice quizzes, code challenges and arcade games for Intro Python, Web Dev, AP CSP, AP CSA, Cybersecurity and Data Structures. Study solo or battle your squad.</p>
         <div class="cta">${ct.fresh ? `<button class="btn primary lg" onclick="startPicker('${ct.c.id}')">▶ Start ${esc(ct.c.title)}</button>` : `<a class="btn primary lg" href="${contHref}">▶ Continue</a>`}<a class="btn lg" href="#/courses">See the courses</a></div>
@@ -2286,7 +2286,7 @@ route('/feedback', (view, p) => {
   const from = p.from || S.lastPage || '';
   const sent = (S.feedbackSent || []).slice(-5).reverse();
   view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// feedback</span><h1 style="font-size:2.2rem">💬 Feedback & suggestions</h1>
-    <p class="muted">Got an idea, found a bug, or spotted a wrong answer? Tell us! Every message goes straight to the people who run CompciStudy.</p>
+    <p class="muted">Got an idea, found a bug, or spotted a wrong answer? Tell us! Every message goes straight to the people who run CompSci-Study.</p>
     <form class="card" id="fb-form">
       <fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:600;margin-bottom:8px">What kind of feedback?</legend><div class="grid g2" style="gap:8px">${FB_TYPES.map(([v, i, l], k) => `<label class="card fb-type" style="padding:12px;display:flex;gap:10px;align-items:center;cursor:pointer;box-shadow:none"><input type="radio" name="fb-t" value="${v}" ${k === 0 ? 'checked' : ''}> <span style="font-size:1.3rem">${i}</span> ${l}</label>`).join('')}</div></fieldset>
       <label class="field"><span>Your message</span><textarea class="input" id="fb-msg" required maxlength="1500" rows="5" style="font-family:var(--font);font-size:1rem" placeholder="e.g. It would be cool if duels had a 3-player mode!"></textarea><small class="muted" id="fb-count">0/1500</small></label>
@@ -2672,13 +2672,13 @@ route('/squad', (view, p) => {
   const ss = squadState();
   const head = `<span class="eyebrow">// squad</span><h1 style="font-size:2.2rem">Squad</h1>`;
   if (!ss.configured) {
-    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Squad features aren't switched on for this site yet.</b><p class="muted" style="margin:6px 0 0">Whoever set up this CompciStudy site needs to connect a free Firebase database (about 20 minutes, once). The steps are in <b>SETUP.md</b> in the GitHub repo, under "Turn on squads".</p></div>
+    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Squad features aren't switched on for this site yet.</b><p class="muted" style="margin:6px 0 0">Whoever set up this CompSci-Study site needs to connect a free Firebase database (about 20 minutes, once). The steps are in <b>SETUP.md</b> in the GitHub repo, under "Turn on squads".</p></div>
       <div class="card" style="margin-top:16px"><h3>Meanwhile, you can still:</h3><ul><li>Study every course, quiz and code challenge</li><li>Duel <a href="#/duel">ByteBot</a> in the arcade</li><li>Play the <a href="#/weekly">weekly challenge</a></li></ul></div></div>`;
     return;
   }
   if (ss.status === 'loading' || ss.status === 'off') { view.innerHTML = `<div class="wrap narrow">${head}<p class="muted">Connecting to the squad server…</p></div>`; fbInit(); return; }
   if (ss.status === 'error') {
-    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Can't reach the squad server right now.</b><p class="muted" style="margin:6px 0 10px">Your school's network may be blocking Firebase (Google's database service), or you might be offline. Everything else in CompciStudy still works. Try again from home, or ask your teacher about allowing <code>firestore.googleapis.com</code>.</p><small class="muted">Details: ${esc(ss.err)}</small></div><button class="btn primary" style="margin-top:14px" id="retry">Try again</button></div>`;
+    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Can't reach the squad server right now.</b><p class="muted" style="margin:6px 0 10px">Your school's network may be blocking Firebase (Google's database service), or you might be offline. Everything else in CompSci-Study still works. Try again from home, or ask your teacher about allowing <code>firestore.googleapis.com</code>.</p><small class="muted">Details: ${esc(ss.err)}</small></div><button class="btn primary" style="margin-top:14px" id="retry">Try again</button></div>`;
     $('#retry', view).onclick = () => { fbReady = null; FB.status = 'off'; fbInit(); render(); };
     return;
   }
@@ -2706,7 +2706,7 @@ function squadHome(view, p) {
       <a class="btn primary" href="#/duel">⚔️ Duel</a></div>
     <div class="tabs" style="margin-top:22px" role="tablist">${[['board', '🏆 Leaderboard'], ['duels', '⚔️ Duels'], ['bank', '✍️ Question bank'], ['weekly', `${EVENT.emoji} Weekly`], ['manage', '⚙️ Squad settings']].map(([k, l]) => `<button role="tab" class="${tab === k ? 'on' : ''}" onclick="go('/squad?tab=${k}')">${l}</button>`).join('')}</div>
     <div id="sq-body"><p class="muted">Loading…</p></div></div>`;
-  $('#copy-code', view).onclick = () => { const txt = `Join my CompciStudy squad "${S.squad.name}"! Code: ${fmtCode(S.squad.code)}\n${link}`; navigator.clipboard?.writeText(txt).then(() => toast('Invite copied!', 'Paste it in your group chat.'), () => modal(`<h3>Invite link</h3><textarea class="input" readonly>${esc(txt)}</textarea>`)); };
+  $('#copy-code', view).onclick = () => { const txt = `Join my CompSci-Study squad "${S.squad.name}"! Code: ${fmtCode(S.squad.code)}\n${link}`; navigator.clipboard?.writeText(txt).then(() => toast('Invite copied!', 'Paste it in your group chat.'), () => modal(`<h3>Invite link</h3><textarea class="input" readonly>${esc(txt)}</textarea>`)); };
   const body = $('#sq-body', view);
   const mUn = subMembers((list) => { if (list) $('#m-count', view) && ($('#m-count', view).textContent = `${list.length} member${list.length === 1 ? '' : 's'}`); });
   onLeave(mUn);
@@ -2937,7 +2937,7 @@ route('/settings', (view) => {
   const st = S.settings, t = THEMES[st.theme] || THEMES.terminal;
   const curBg = st.bg || t.bg, curFg = st.fg || t.fg, curAc = st.accent || t.accent;
   const cr = contrast(curBg, curFg);
-  view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// settings</span><h1 style="font-size:2.2rem">Customize</h1><p class="muted">Make CompciStudy look the way you want. Changes save automatically.</p>
+  view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// settings</span><h1 style="font-size:2.2rem">Customize</h1><p class="muted">Make CompSci-Study look the way you want. Changes save automatically.</p>
     <div class="card" style="margin-top:18px"><h3>🎨 Theme</h3><div class="theme-grid" style="margin-top:10px">${Object.entries(THEMES).map(([k, th]) => `<button class="theme-opt ${st.theme === k ? 'on' : ''}" data-t="${k}" aria-pressed="${st.theme === k}"><span class="pv" style="background:${th.bg}"><i style="width:40%;background:${th.accent}"></i><i style="width:25%;background:${th.accent2}"></i><i style="width:15%;background:${th.fg};opacity:.5"></i></span><span class="nm">${esc(th.name)}</span></button>`).join('')}</div></div>
     <div class="card" style="margin-top:16px"><h3>🖌️ Custom colors</h3><p class="muted"><small>These override the theme. Click reset to go back to the theme's colors.</small></p>
       <div class="toggle"><span>Accent color</span><span class="row"><input type="color" id="c-ac" value="${curAc}"><button class="btn sm ghost" data-reset="accent">Reset</button></span></div>
@@ -2967,7 +2967,7 @@ route('/settings', (view) => {
   $('#f-vol', view).onchange = e => { st.volume = +e.target.value; save(); sfx('ok'); };
   $('#f-goal', view).onchange = e => { st.dailyGoal = +e.target.value; save(); };
   $('#d-exp', view).onclick = () => { const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `compcistudy-backup-${today()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
-  $('#d-imp', view).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const data = JSON.parse(await f.text()); if (!data || typeof data !== 'object' || !('xp' in data)) throw new Error('Not a CompciStudy backup'); if (await confirmBox('Import this backup?', 'It replaces the progress saved in this browser.', 'Import')) { S = deepMerge(DEFAULT_STATE(), data); saveNow(); applyTheme(); toast('Backup imported'); render(); } } catch (err) { toast('Import failed', err.message); } };
+  $('#d-imp', view).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const data = JSON.parse(await f.text()); if (!data || typeof data !== 'object' || !('xp' in data)) throw new Error('Not a CompSci-Study backup'); if (await confirmBox('Import this backup?', 'It replaces the progress saved in this browser.', 'Import')) { S = deepMerge(DEFAULT_STATE(), data); saveNow(); applyTheme(); toast('Backup imported'); render(); } } catch (err) { toast('Import failed', err.message); } };
   $('#d-reset', view).onclick = async () => { if (await confirmBox('Reset everything?', 'This deletes all your XP, progress, badges and settings in this browser. It cannot be undone.', 'Delete everything')) { await leaveSquad(); S = DEFAULT_STATE(); saveNow(); applyTheme(); location.hash = '/'; location.reload(); } };
 });
 
@@ -2983,19 +2983,19 @@ route('/help', (view) => {
     ['How do I send a suggestion?', 'Click the 💬 Feedback tab on the right edge of the screen (on a phone, it\'s in the menu under your avatar). Your message goes straight to the people who run the site.'],
     ['How do the AP CSA practice exams work?', 'Open Practice → AP CSA practice exams. The full exam is like exam day: Section I has 42 multiple-choice questions in 90 minutes, and Section II has 4 free-response questions in 90 minutes. Questions are drawn from all four units using the College Board weightings. You see your score by unit, review every answer, and grade your FRQs with the rubrics. There are also mini exams and unit tests, and you can leave and resume an exam later.'],
     ['What are the underlined words in lessons?', 'They\'re glossary terms. Click one to see what it means in plain English. The full list is on the Glossary page (in the menu under your avatar).'],
-    ['Can I change the examples in lessons?', 'Yes! Every "Try it" box is a live editor. Change the code and press Run (or Ctrl+Enter). If something breaks, CompciStudy explains the error in plain English. Press Reset to get the original back.'],
+    ['Can I change the examples in lessons?', 'Yes! Every "Try it" box is a live editor. Change the code and press Run (or Ctrl+Enter). If something breaks, CompSci-Study explains the error in plain English. Press Reset to get the original back.'],
     ['Do the coding exercises run real code?', 'Yes! Python runs in your browser (it downloads about 10 MB the first time), and JavaScript and HTML run instantly. Java and AP pseudocode use fill-in-the-code exercises instead.'],
     ['How do squads work?', 'A squad is a study group with a 6-character code. Members share a live leaderboard, a weekly squad goal, 1v1 duels and a question bank. The person who creates the squad is the leader, and they approve new questions and can remove members.'],
     ['Is my data private?', 'Your progress is stored only in this browser. If you join a squad, your username, avatar, XP, level and streak are shared with that squad. Questions you write are shared too. No email, no real name and no tracking.'],
     ['I switched computers and my progress is gone!', 'Progress lives in each browser. Use Settings → Export backup on one device and Import on the other.'],
     ['The squad page says it can\'t connect', 'Some school networks block Google\'s Firebase servers. Everything else still works. Try from home, or ask your teacher to allow firestore.googleapis.com.'],
-    ['Something is wrong in a question!', 'Tell whoever runs your CompciStudy site. The content lives in plain text files in the GitHub repo, so it\'s easy to fix. For squad questions, use the Report button.'],
-    ['Can I install it like an app?', 'Yes. In Chrome, open the ⋮ menu and choose "Install CompciStudy" (or "Add to Home screen" on a phone).'],
+    ['Something is wrong in a question!', 'Tell whoever runs your CompSci-Study site. The content lives in plain text files in the GitHub repo, so it\'s easy to fix. For squad questions, use the Report button.'],
+    ['Can I install it like an app?', 'Yes. In Chrome, open the ⋮ menu and choose "Install CompSci-Study" (or "Add to Home screen" on a phone).'],
     ['Keyboard shortcuts?', 'In quizzes, press 1–4 to pick an answer and Enter for the next question.'],
   ];
   view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// help</span><h1 style="font-size:2.2rem">Help & FAQ</h1>
     <div class="stack">${faq.map(([q, a]) => `<details class="card"><summary style="cursor:pointer;font-weight:700">${esc(q)}</summary><p class="muted" style="margin:10px 0 0">${esc(a)}</p></details>`).join('')}</div>
-    <div class="card" style="margin-top:20px"><h3>About CompciStudy</h3><p class="muted">A free study site for high school computer science, built for a group of friends. AP® is a trademark of the College Board, which is not affiliated with this site. Content follows the 2025–26 AP CSA framework and the AP CSP big ideas.</p><button class="btn" id="redo-onb">Replay the welcome tour</button></div></div>${footer()}`;
+    <div class="card" style="margin-top:20px"><h3>About CompSci-Study</h3><p class="muted">A free study site for high school computer science, built for a group of friends. AP® is a trademark of the College Board, which is not affiliated with this site. Content follows the 2025–26 AP CSA framework and the AP CSP big ideas.</p><button class="btn" id="redo-onb">Replay the welcome tour</button></div></div>${footer()}`;
   $('#redo-onb', view).onclick = () => onboarding();
 });
 
@@ -3004,7 +3004,7 @@ function onboarding() {
   const d = { name: S.profile.name, avatar: S.profile.avatar, color: S.profile.color, year: S.profile.year, courses: [...(S.profile.courses || [])], theme: S.settings.theme };
   let step = 0;
   const steps = [
-    () => `<div style="text-align:center"><div style="font-size:3.4rem">&gt;_</div><h2>Welcome to CompciStudy</h2><p class="muted">Study every high school CS class with notes, quizzes, code challenges, boss battles and duels with your friends.</p></div>
+    () => `<div style="text-align:center"><div style="font-size:3.4rem">&gt;_</div><h2>Welcome to CompSci-Study</h2><p class="muted">Study every high school CS class with notes, quizzes, code challenges, boss battles and duels with your friends.</p></div>
       <label class="field"><span>Pick a username</span><input class="input" id="o-name" maxlength="20" value="${esc(d.name)}" placeholder="e.g. ByteSized" autofocus></label><p class="muted"><small>🔒 Use a nickname, not your full real name. Your squad sees this name.</small></p>`,
     () => `<h2>Choose your look</h2><div class="row" style="margin-bottom:12px"><span id="o-av">${avatarHtml(d, 'lg')}</span></div><div class="emoji-grid">${AVATARS.map(a => `<button type="button" data-a="${a}" class="${a === d.avatar ? 'on' : ''}">${a}</button>`).join('')}</div><div class="swatches" style="margin-top:12px">${COLORS.map(c => `<button type="button" data-c="${c}" class="${c === d.color ? 'on' : ''}" style="background:${c}" aria-label="${c}"></button>`).join('')}</div>`,
     () => `<h2>What grade are you in?</h2><div class="grid g2" style="margin-top:14px">${GRADES.map(([y, l]) => `<button class="btn lg ${d.year === y ? 'primary' : ''}" style="width:100%" data-y="${y}" aria-pressed="${d.year === y}">${l}</button>`).join('')}</div>`,

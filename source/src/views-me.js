@@ -47,7 +47,7 @@ route('/settings', (view) => {
   const st = S.settings, t = THEMES[st.theme] || THEMES.terminal;
   const curBg = st.bg || t.bg, curFg = st.fg || t.fg, curAc = st.accent || t.accent;
   const cr = contrast(curBg, curFg);
-  view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// settings</span><h1 style="font-size:2.2rem">Customize</h1><p class="muted">Make CompciStudy look the way you want. Changes save automatically.</p>
+  view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// settings</span><h1 style="font-size:2.2rem">Customize</h1><p class="muted">Make CompSci-Study look the way you want. Changes save automatically.</p>
     <div class="card" style="margin-top:18px"><h3>🎨 Theme</h3><div class="theme-grid" style="margin-top:10px">${Object.entries(THEMES).map(([k, th]) => `<button class="theme-opt ${st.theme === k ? 'on' : ''}" data-t="${k}" aria-pressed="${st.theme === k}"><span class="pv" style="background:${th.bg}"><i style="width:40%;background:${th.accent}"></i><i style="width:25%;background:${th.accent2}"></i><i style="width:15%;background:${th.fg};opacity:.5"></i></span><span class="nm">${esc(th.name)}</span></button>`).join('')}</div></div>
     <div class="card" style="margin-top:16px"><h3>🖌️ Custom colors</h3><p class="muted"><small>These override the theme. Click reset to go back to the theme's colors.</small></p>
       <div class="toggle"><span>Accent color</span><span class="row"><input type="color" id="c-ac" value="${curAc}"><button class="btn sm ghost" data-reset="accent">Reset</button></span></div>
@@ -77,7 +77,7 @@ route('/settings', (view) => {
   $('#f-vol', view).onchange = e => { st.volume = +e.target.value; save(); sfx('ok'); };
   $('#f-goal', view).onchange = e => { st.dailyGoal = +e.target.value; save(); };
   $('#d-exp', view).onclick = () => { const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `compcistudy-backup-${today()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
-  $('#d-imp', view).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const data = JSON.parse(await f.text()); if (!data || typeof data !== 'object' || !('xp' in data)) throw new Error('Not a CompciStudy backup'); if (await confirmBox('Import this backup?', 'It replaces the progress saved in this browser.', 'Import')) { S = deepMerge(DEFAULT_STATE(), data); saveNow(); applyTheme(); toast('Backup imported'); render(); } } catch (err) { toast('Import failed', err.message); } };
+  $('#d-imp', view).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const data = JSON.parse(await f.text()); if (!data || typeof data !== 'object' || !('xp' in data)) throw new Error('Not a CompSci-Study backup'); if (await confirmBox('Import this backup?', 'It replaces the progress saved in this browser.', 'Import')) { S = deepMerge(DEFAULT_STATE(), data); saveNow(); applyTheme(); toast('Backup imported'); render(); } } catch (err) { toast('Import failed', err.message); } };
   $('#d-reset', view).onclick = async () => { if (await confirmBox('Reset everything?', 'This deletes all your XP, progress, badges and settings in this browser. It cannot be undone.', 'Delete everything')) { await leaveSquad(); S = DEFAULT_STATE(); saveNow(); applyTheme(); location.hash = '/'; location.reload(); } };
 });
 
@@ -93,19 +93,19 @@ route('/help', (view) => {
     ['How do I send a suggestion?', 'Click the 💬 Feedback tab on the right edge of the screen (on a phone, it\'s in the menu under your avatar). Your message goes straight to the people who run the site.'],
     ['How do the AP CSA practice exams work?', 'Open Practice → AP CSA practice exams. The full exam is like exam day: Section I has 42 multiple-choice questions in 90 minutes, and Section II has 4 free-response questions in 90 minutes. Questions are drawn from all four units using the College Board weightings. You see your score by unit, review every answer, and grade your FRQs with the rubrics. There are also mini exams and unit tests, and you can leave and resume an exam later.'],
     ['What are the underlined words in lessons?', 'They\'re glossary terms. Click one to see what it means in plain English. The full list is on the Glossary page (in the menu under your avatar).'],
-    ['Can I change the examples in lessons?', 'Yes! Every "Try it" box is a live editor. Change the code and press Run (or Ctrl+Enter). If something breaks, CompciStudy explains the error in plain English. Press Reset to get the original back.'],
+    ['Can I change the examples in lessons?', 'Yes! Every "Try it" box is a live editor. Change the code and press Run (or Ctrl+Enter). If something breaks, CompSci-Study explains the error in plain English. Press Reset to get the original back.'],
     ['Do the coding exercises run real code?', 'Yes! Python runs in your browser (it downloads about 10 MB the first time), and JavaScript and HTML run instantly. Java and AP pseudocode use fill-in-the-code exercises instead.'],
     ['How do squads work?', 'A squad is a study group with a 6-character code. Members share a live leaderboard, a weekly squad goal, 1v1 duels and a question bank. The person who creates the squad is the leader, and they approve new questions and can remove members.'],
     ['Is my data private?', 'Your progress is stored only in this browser. If you join a squad, your username, avatar, XP, level and streak are shared with that squad. Questions you write are shared too. No email, no real name and no tracking.'],
     ['I switched computers and my progress is gone!', 'Progress lives in each browser. Use Settings → Export backup on one device and Import on the other.'],
     ['The squad page says it can\'t connect', 'Some school networks block Google\'s Firebase servers. Everything else still works. Try from home, or ask your teacher to allow firestore.googleapis.com.'],
-    ['Something is wrong in a question!', 'Tell whoever runs your CompciStudy site. The content lives in plain text files in the GitHub repo, so it\'s easy to fix. For squad questions, use the Report button.'],
-    ['Can I install it like an app?', 'Yes. In Chrome, open the ⋮ menu and choose "Install CompciStudy" (or "Add to Home screen" on a phone).'],
+    ['Something is wrong in a question!', 'Tell whoever runs your CompSci-Study site. The content lives in plain text files in the GitHub repo, so it\'s easy to fix. For squad questions, use the Report button.'],
+    ['Can I install it like an app?', 'Yes. In Chrome, open the ⋮ menu and choose "Install CompSci-Study" (or "Add to Home screen" on a phone).'],
     ['Keyboard shortcuts?', 'In quizzes, press 1–4 to pick an answer and Enter for the next question.'],
   ];
   view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// help</span><h1 style="font-size:2.2rem">Help & FAQ</h1>
     <div class="stack">${faq.map(([q, a]) => `<details class="card"><summary style="cursor:pointer;font-weight:700">${esc(q)}</summary><p class="muted" style="margin:10px 0 0">${esc(a)}</p></details>`).join('')}</div>
-    <div class="card" style="margin-top:20px"><h3>About CompciStudy</h3><p class="muted">A free study site for high school computer science, built for a group of friends. AP® is a trademark of the College Board, which is not affiliated with this site. Content follows the 2025–26 AP CSA framework and the AP CSP big ideas.</p><button class="btn" id="redo-onb">Replay the welcome tour</button></div></div>${footer()}`;
+    <div class="card" style="margin-top:20px"><h3>About CompSci-Study</h3><p class="muted">A free study site for high school computer science, built for a group of friends. AP® is a trademark of the College Board, which is not affiliated with this site. Content follows the 2025–26 AP CSA framework and the AP CSP big ideas.</p><button class="btn" id="redo-onb">Replay the welcome tour</button></div></div>${footer()}`;
   $('#redo-onb', view).onclick = () => onboarding();
 });
 
@@ -114,7 +114,7 @@ function onboarding() {
   const d = { name: S.profile.name, avatar: S.profile.avatar, color: S.profile.color, year: S.profile.year, courses: [...(S.profile.courses || [])], theme: S.settings.theme };
   let step = 0;
   const steps = [
-    () => `<div style="text-align:center"><div style="font-size:3.4rem">&gt;_</div><h2>Welcome to CompciStudy</h2><p class="muted">Study every high school CS class with notes, quizzes, code challenges, boss battles and duels with your friends.</p></div>
+    () => `<div style="text-align:center"><div style="font-size:3.4rem">&gt;_</div><h2>Welcome to CompSci-Study</h2><p class="muted">Study every high school CS class with notes, quizzes, code challenges, boss battles and duels with your friends.</p></div>
       <label class="field"><span>Pick a username</span><input class="input" id="o-name" maxlength="20" value="${esc(d.name)}" placeholder="e.g. ByteSized" autofocus></label><p class="muted"><small>🔒 Use a nickname, not your full real name. Your squad sees this name.</small></p>`,
     () => `<h2>Choose your look</h2><div class="row" style="margin-bottom:12px"><span id="o-av">${avatarHtml(d, 'lg')}</span></div><div class="emoji-grid">${AVATARS.map(a => `<button type="button" data-a="${a}" class="${a === d.avatar ? 'on' : ''}">${a}</button>`).join('')}</div><div class="swatches" style="margin-top:12px">${COLORS.map(c => `<button type="button" data-c="${c}" class="${c === d.color ? 'on' : ''}" style="background:${c}" aria-label="${c}"></button>`).join('')}</div>`,
     () => `<h2>What grade are you in?</h2><div class="grid g2" style="margin-top:14px">${GRADES.map(([y, l]) => `<button class="btn lg ${d.year === y ? 'primary' : ''}" style="width:100%" data-y="${y}" aria-pressed="${d.year === y}">${l}</button>`).join('')}</div>`,

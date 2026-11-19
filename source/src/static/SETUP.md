@@ -1,4 +1,4 @@
-# CompciStudy setup guide
+# CompSci-Study setup guide
 
 There are two parts:
 - **Part 1** puts the website online at `https://YOUR-NAME.github.io/compcistudy/`. It takes about 10 minutes.
@@ -27,7 +27,7 @@ The site works without Part 2. Everyone just studies solo until you do it.
 5. Wait 1–2 minutes, then refresh the Settings → Pages screen. Your link appears at the top: `https://YOUR-NAME.github.io/compcistudy/`
 6. **Test it on a school Chromebook.** If it loads, share the link with your friends!
 
-> **Tip:** In Chrome, open the ⋮ menu and choose **Cast, save and share → Install page as app** (or "Install CompciStudy"). That puts CompciStudy on the Chromebook shelf like a real app.
+> **Tip:** In Chrome, open the ⋮ menu and choose **Cast, save and share → Install page as app** (or "Install CompSci-Study"). That puts CompSci-Study on the Chromebook shelf like a real app.
 
 ---
 
@@ -55,7 +55,7 @@ This gives each browser a private ID without needing an email.
 
 ### 2.4 Connect the website to Firebase
 1. Click the **⚙️ gear → Project settings**, scroll down to **Your apps**, and click the **web icon `</>`**.
-2. Name the app `CompciStudy`. **Leave Firebase Hosting unchecked**, because we're using GitHub. Click **Register app**.
+2. Name the app `CompSci-Study`. **Leave Firebase Hosting unchecked**, because we're using GitHub. Click **Register app**.
 3. Firebase shows you a `firebaseConfig = { ... }` block. Keep that page open.
 4. In your GitHub repo, open `firebase-config.js` and click the **✏️ pencil** to edit it.
 5. Replace each `PASTE_...` value with the matching value from Firebase: `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId` and `appId`. Keep the quotes.

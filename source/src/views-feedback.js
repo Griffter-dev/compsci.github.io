@@ -4,7 +4,7 @@ route('/feedback', (view, p) => {
   const from = p.from || S.lastPage || '';
   const sent = (S.feedbackSent || []).slice(-5).reverse();
   view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// feedback</span><h1 style="font-size:2.2rem">💬 Feedback & suggestions</h1>
-    <p class="muted">Got an idea, found a bug, or spotted a wrong answer? Tell us! Every message goes straight to the people who run CompciStudy.</p>
+    <p class="muted">Got an idea, found a bug, or spotted a wrong answer? Tell us! Every message goes straight to the people who run CompSci-Study.</p>
     <form class="card" id="fb-form">
       <fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:600;margin-bottom:8px">What kind of feedback?</legend><div class="grid g2" style="gap:8px">${FB_TYPES.map(([v, i, l], k) => `<label class="card fb-type" style="padding:12px;display:flex;gap:10px;align-items:center;cursor:pointer;box-shadow:none"><input type="radio" name="fb-t" value="${v}" ${k === 0 ? 'checked' : ''}> <span style="font-size:1.3rem">${i}</span> ${l}</label>`).join('')}</div></fieldset>
       <label class="field"><span>Your message</span><textarea class="input" id="fb-msg" required maxlength="1500" rows="5" style="font-family:var(--font);font-size:1rem" placeholder="e.g. It would be cool if duels had a 3-player mode!"></textarea><small class="muted" id="fb-count">0/1500</small></label>

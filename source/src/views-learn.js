@@ -23,7 +23,7 @@ route('/', (view) => {
   <div class="wrap">
     <section class="hero grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:center;gap:40px">
       <div>
-        <span class="eyebrow">$ compcistudy --years 9-12</span>
+        <span class="eyebrow">$ compsci-study --years 9-12</span>
         <h1>${S.profile.name ? `Hey ${esc(S.profile.name)}.<br>` : ''}Computer science, <span class="hl">all four years.</span></h1>
         <p class="lead">Notes, practice quizzes, code challenges and arcade games for Intro Python, Web Dev, AP CSP, AP CSA, Cybersecurity and Data Structures. Study solo or battle your squad.</p>
         <div class="cta">${ct.fresh ? `<button class="btn primary lg" onclick="startPicker('${ct.c.id}')">▶ Start ${esc(ct.c.title)}</button>` : `<a class="btn primary lg" href="${contHref}">▶ Continue</a>`}<a class="btn lg" href="#/courses">See the courses</a></div>

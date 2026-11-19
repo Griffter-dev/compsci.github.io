@@ -3,13 +3,13 @@ route('/squad', (view, p) => {
   const ss = squadState();
   const head = `<span class="eyebrow">// squad</span><h1 style="font-size:2.2rem">Squad</h1>`;
   if (!ss.configured) {
-    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Squad features aren't switched on for this site yet.</b><p class="muted" style="margin:6px 0 0">Whoever set up this CompciStudy site needs to connect a free Firebase database (about 20 minutes, once). The steps are in <b>SETUP.md</b> in the GitHub repo, under "Turn on squads".</p></div>
+    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Squad features aren't switched on for this site yet.</b><p class="muted" style="margin:6px 0 0">Whoever set up this CompSci-Study site needs to connect a free Firebase database (about 20 minutes, once). The steps are in <b>SETUP.md</b> in the GitHub repo, under "Turn on squads".</p></div>
       <div class="card" style="margin-top:16px"><h3>Meanwhile, you can still:</h3><ul><li>Study every course, quiz and code challenge</li><li>Duel <a href="#/duel">ByteBot</a> in the arcade</li><li>Play the <a href="#/weekly">weekly challenge</a></li></ul></div></div>`;
     return;
   }
   if (ss.status === 'loading' || ss.status === 'off') { view.innerHTML = `<div class="wrap narrow">${head}<p class="muted">Connecting to the squad server…</p></div>`; fbInit(); return; }
   if (ss.status === 'error') {
-    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Can't reach the squad server right now.</b><p class="muted" style="margin:6px 0 10px">Your school's network may be blocking Firebase (Google's database service), or you might be offline. Everything else in CompciStudy still works. Try again from home, or ask your teacher about allowing <code>firestore.googleapis.com</code>.</p><small class="muted">Details: ${esc(ss.err)}</small></div><button class="btn primary" style="margin-top:14px" id="retry">Try again</button></div>`;
+    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Can't reach the squad server right now.</b><p class="muted" style="margin:6px 0 10px">Your school's network may be blocking Firebase (Google's database service), or you might be offline. Everything else in CompSci-Study still works. Try again from home, or ask your teacher about allowing <code>firestore.googleapis.com</code>.</p><small class="muted">Details: ${esc(ss.err)}</small></div><button class="btn primary" style="margin-top:14px" id="retry">Try again</button></div>`;
     $('#retry', view).onclick = () => { fbReady = null; FB.status = 'off'; fbInit(); render(); };
     return;
   }
@@ -37,7 +37,7 @@ function squadHome(view, p) {
       <a class="btn primary" href="#/duel">⚔️ Duel</a></div>
     <div class="tabs" style="margin-top:22px" role="tablist">${[['board', '🏆 Leaderboard'], ['duels', '⚔️ Duels'], ['bank', '✍️ Question bank'], ['weekly', `${EVENT.emoji} Weekly`], ['manage', '⚙️ Squad settings']].map(([k, l]) => `<button role="tab" class="${tab === k ? 'on' : ''}" onclick="go('/squad?tab=${k}')">${l}</button>`).join('')}</div>
     <div id="sq-body"><p class="muted">Loading…</p></div></div>`;
-  $('#copy-code', view).onclick = () => { const txt = `Join my CompciStudy squad "${S.squad.name}"! Code: ${fmtCode(S.squad.code)}\n${link}`; navigator.clipboard?.writeText(txt).then(() => toast('Invite copied!', 'Paste it in your group chat.'), () => modal(`<h3>Invite link</h3><textarea class="input" readonly>${esc(txt)}</textarea>`)); };
+  $('#copy-code', view).onclick = () => { const txt = `Join my CompSci-Study squad "${S.squad.name}"! Code: ${fmtCode(S.squad.code)}\n${link}`; navigator.clipboard?.writeText(txt).then(() => toast('Invite copied!', 'Paste it in your group chat.'), () => modal(`<h3>Invite link</h3><textarea class="input" readonly>${esc(txt)}</textarea>`)); };
   const body = $('#sq-body', view);
   const mUn = subMembers((list) => { if (list) $('#m-count', view) && ($('#m-count', view).textContent = `${list.length} member${list.length === 1 ? '' : 's'}`); });
   onLeave(mUn);

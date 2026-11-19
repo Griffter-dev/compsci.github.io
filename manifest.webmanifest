@@ -1,6 +1,6 @@
 {
-  "name": "CompciStudy",
-  "short_name": "CompciStudy",
+  "name": "CompSci-Study",
+  "short_name": "CompSci-Study",
   "description": "Study high school computer science: courses, quizzes, games and squads.",
   "start_url": "./",
   "scope": "./",

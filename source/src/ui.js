@@ -118,7 +118,7 @@ function renderChrome() {
   const tag = h => h === '/arcade' ? '<span class="tag">2×</span>' : h === '/assignments' && due ? `<span class="tag due">${due}</span>` : '';
   const st = streakAlive(), L = levelFor(S.xp);
   $('#topbar').innerHTML = `
-    <a class="logo" href="#/" aria-label="CompciStudy home"><span class="mark">&gt;_</span><span>Compci<b>Study</b></span></a>
+    <a class="logo" href="#/" aria-label="CompSci-Study home"><span class="mark">&gt;_</span><span>CompSci-<b>Study</b></span></a>
     <nav class="navlinks" aria-label="Main">${DESK_NAV.map(([h, n, i]) => `<a href="#${h === '/feedback' ? '/feedback?from=' + encodeURIComponent(pageLabel()) : h}" class="${active(h) ? 'on' : ''}" title="${n}"><span class="ni" aria-hidden="true">${i}</span><span class="nl">${n}</span>${tag(h)}</a>`).join('')}</nav>
     <div class="topright">
       <button class="chip search-btn" id="search-btn" aria-label="Search lessons, practices and units (shortcut: /)" title="Search  ( / )">🔍 <span class="search-lbl">Search</span><kbd>/</kbd></button>
@@ -153,7 +153,7 @@ function toggleMenu() {
   m.addEventListener('click', e => { if (e.target.closest('a')) m.remove(); });
 }
 function footer() {
-  return `<footer class="footer"><div class="cols"><div><b class="mono">Compci<span style="color:var(--accent)">Study</span></b><br>Made by students, for students. Free forever.</div>
+  return `<footer class="footer"><div class="cols"><div><b class="mono">CompSci-<span style="color:var(--accent)">Study</span></b><br>Made by students, for students. Free forever.</div>
   <div><a href="#/courses">Courses</a><a href="#/assignments">Assignments</a><a href="#/arcade">Arcade</a><a href="#/squad">Squad</a><a href="#/notes">Notes</a><a href="#/glossary">Glossary</a><a href="#/feedback">Feedback</a><a href="#/help">Help & FAQ</a><a href="#/settings">Settings</a></div></div></footer>`;
 }
 

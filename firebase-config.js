@@ -1,5 +1,5 @@
 // ============================================================================
-//  CompciStudy · Firebase settings (turns on squads, leaderboards and duels)
+//  CompSci-Study · Firebase settings (turns on squads, leaderboards and duels)
 //  1. Follow "Turn on squads" in SETUP.md to make a free Firebase project.
 //  2. Replace the PASTE_... values below with the ones Firebase gives you.
 //  3. Commit the file. That's it!
