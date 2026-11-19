@@ -78,7 +78,7 @@ route('/learn/:uid/:li', (view, p) => {
   $('#done-btn', view).onclick = () => { markLesson(u.id, li); goNextAfter(c, u, key); };
 });
 function inlineQ(q, i) {
-  return `<div class="iq" data-i="${i}" role="group" aria-label="Quiz"><span class="iq-tag">❓ Quiz</span><div class="qtext" style="font-size:1.02rem;margin-top:6px">${fmt(q.q)}</div>${q.code ? codeBlock(q.code, q.lang, false) : ''}<div class="choices" style="margin-top:8px">${shuffle(q.choices.map((_, k) => k), seeded(q.id)).map(k => `<button class="choice" data-k="${k}" style="padding:9px 14px"><span>${fmt(q.choices[k])}</span></button>`).join('')}</div><div class="iq-after"></div></div>`;
+  return `<div class="iq" data-i="${i}" role="group" aria-label="Quiz"><span class="iq-tag">❓ Quiz</span><div class="qtext" style="font-size:1.02rem;margin-top:6px">${fmt(q.q)}${qPts(q)}</div>${qExtra(q)}<div class="choices" style="margin-top:8px">${choiceOrder(q, seeded(q.id)).map(k => `<button class="choice" data-k="${k}" style="padding:9px 14px"><span>${fmt(q.choices[k])}</span></button>`).join('')}</div><div class="iq-after"></div></div>`;
 }
 function wireInlineQs(view, qs) {
   $$('.iq', view).forEach(box => {
@@ -196,7 +196,7 @@ function checkFill(root, q) {
 function revealFill(root, q) { $$('.blank', root).forEach(inp => { if (!inp.classList.contains('right')) { inp.value = q.blanks[+inp.dataset.b][0]; inp.classList.remove('wrong'); inp.classList.add('shown'); } }); }
 function fillView(view, q, u, c, head, prev) {
   view.innerHTML = `<div class="viewer">${moduleSidebar(c, q.id, u.id)}<article class="lesson">${head('🧩 Fill in the code', !!S.fills[q.id])}
-    <h1 style="font-size:1.6rem;margin:14px 0 10px">${esc(q.title || 'Fill in the code')}</h1><div class="qtext">${fmt(q.q)}</div>
+    <h1 style="font-size:1.6rem;margin:14px 0 10px">${esc(q.title || 'Fill in the code')}</h1><div class="qtext">${fmt(q.q)}${qPts(q)}</div>
     <div id="fill">${fillHtml(q)}</div>
     <div id="fill-after"></div>
     <div class="row" style="margin-top:12px"><button class="btn primary" id="check">✓ Check</button><button class="btn ghost" id="reveal" disabled>👀 Show answers</button></div>

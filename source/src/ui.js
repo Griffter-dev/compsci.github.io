@@ -62,6 +62,16 @@ function highlight(code, lang) {
   return out + esc(code.slice(last));
 }
 const LANG_LABEL = { python: 'python', java: 'java', js: 'javascript', javascript: 'javascript', html: 'html', css: 'css', pseudo: 'AP pseudocode', bash: 'terminal', sql: 'sql', text: 'text', '': 'text' };
+/* Question body below the stem: code, call table, I/II/III options, then the ask line (AP-quiz-sheet style). */
+function qExtra(q) {
+  let h = q.code ? codeBlock(q.code, q.lang, false) : '';
+  if (q.table && q.table.length) h += `<div class="qtable-wrap"><table class="qtable"><thead><tr>${q.table[0].map(c => `<th>${fmt(c)}</th>`).join('')}</tr></thead><tbody>${q.table.slice(1).map(r => `<tr>${r.map(c => `<td>${fmt(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  if (q.ask) h += `<p class="qask">${fmt(q.ask)}</p>`;
+  if (q.opts) h += `<div class="qopts">${q.opts.map(o => `<div class="qopt"><b class="qopt-n">${o.n}.</b><div style="min-width:0">${o.text ? `<span>${fmt(o.text)}</span>` : ''}${o.code ? codeBlock(o.code, o.lang, false) : ''}</div></div>`).join('')}</div>`;
+  return h;
+}
+const qPts = q => q.sheet ? `<span class="qpts">(${q.pts || 1} pt${(q.pts || 1) > 1 ? 's' : ''})</span>` : '';
+const choiceOrder = (q, rnd) => q.sheet ? q.choices.map((_, i) => i) : shuffle(q.choices.map((_, i) => i), rnd);
 function codeBlock(code, lang, copy = true) {
   return `<pre class="code"><div class="chead"><span>${esc(LANG_LABEL[lang] || lang)}</span>${copy ? '<button type="button" data-copy>copy</button>' : ''}</div><code>${highlight(code, lang)}</code></pre>`;
 }

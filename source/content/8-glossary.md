@@ -47,3 +47,17 @@ Format: - **term** (other forms): definition
 - **concatenation** (concatenate): Joining strings together with `+`.
 - **encryption** (encrypt, decrypt): Scrambling data so only someone with the key can read it.
 - **Big-O** (big o, time complexity): A way to describe how an algorithm's work grows as its input gets bigger.
+- **tuple**: An ordered collection that can't be changed after it's made, like `(3, 7)`.
+- **set** (sets): A collection with no duplicates and no order, like `{1, 2, 3}`.
+- **exception** (try, except, error handling): An error raised while a program runs. `try`/`except` catches it so the program can keep going.
+- **API** (application program interface): A set of procedures or URLs, with documentation, that lets one program use another's features or data.
+- **JSON**: A text format for sending data that looks like JavaScript objects and lists.
+- **heap** (min-heap, priority queue): A tree where every parent is smaller (or larger) than its children, so the smallest item is always on top.
+- **graph** (vertex, edge): A set of nodes connected by edges, like a map of roads or a social network.
+- **BFS** (breadth-first search): Exploring a graph level by level with a queue.
+- **DFS** (depth-first search): Exploring a graph by going as deep as possible first, using a stack or recursion.
+- **zero trust**: A security model that checks every user and device on every request instead of trusting anything inside the network.
+- **incident response**: The steps a team follows when an attack happens: prepare, detect, contain, eradicate, recover and learn.
+- **chmod** (file permissions): The Linux command that sets who can read, write and run a file, such as `chmod 640`.
+- **heuristic**: An approach that finds a good-enough answer quickly when finding the best answer would take too long.
+- **undecidable problem** (halting problem): A problem that no algorithm can answer correctly for every possible input.

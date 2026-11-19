@@ -1,8 +1,7 @@
 # COURSE csp | AP CS Principles | AP CSP | 🌐 | 2 | Sophomore | #10b981
-> All 5 Big Ideas of AP CSP: creative development, data, algorithms and programming, networks, and the impact of computing. Uses the AP exam's pseudocode.
+> All 5 Big Ideas of AP CSP, following the College Board Course and Exam Description (topics 1.1–5.6). The exam is 70 multiple-choice questions in 2 hours (70% of your score, including 8 "select two answers" questions and 5 with a reading passage), plus the Create performance task and 2 written-response questions about it (30%). Uses the AP exam's pseudocode.
 
-## UNIT csp1 | Big Idea 1: Creative Development
-
+## UNIT csp1 | Big Idea 1: Creative Development | 10–13%
 ### LESSON Collaboration, design and program purpose | 9
 **Exam weight: 10–13%.** This Big Idea covers *how* programs get made.
 
@@ -103,8 +102,51 @@ LINE: 7
 FIX: avg ← sum / LENGTH(nums)
 WHY: Dividing by 2 only works for a list with exactly two items. Divide by `LENGTH(nums)`.
 
-## UNIT csp2 | Big Idea 2: Data
+### QUIZ
+Q: A team of students is building an app. Which of the following are benefits of collaborating with people who have different backgrounds?
+PTS: 1
+OPT I: The team is more likely to notice ways the app could be biased or hard to use for some people.
+OPT II: Different points of view can lead to more creative solutions.
+OPT III: Collaboration guarantees the program will have no errors.
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: Diverse teams catch more problems and generate more ideas (topic 1.1). Nothing guarantees a program has no errors, so III is false.
 
+Q: A programmer wrote the following procedure, which is intended to return the number of values in `numList` that are greater than `target`.
+PTS: 1
+```pseudo
+PROCEDURE countAbove(numList, target)
+{
+   count ← 0
+   FOR EACH num IN numList
+   {
+      IF (num ≥ target)
+      {
+         count ← count + 1
+      }
+   }
+   RETURN(count)
+}
+```
+ASK: Which of the following procedure calls can be used to show that the procedure does NOT work as intended?
+- [ ] `countAbove([1, 2, 3], 5)`
+- [x] `countAbove([4, 5, 6], 5)`
+- [ ] `countAbove([7, 8, 9], 5)`
+- [ ] `countAbove([], 5)`
+WHY: The `≥` should be `>`. Only a list containing a value **equal** to the target reveals the logic error: [4, 5, 6] should give 1 but gives 2. The other calls return the correct answer by luck.
+
+Q: Which of the following best describes a syntax error, a logic error and a run-time error, in that order?
+PTS: 1
+- [ ] Dividing by zero; a missing parenthesis; using < instead of ≤
+- [x] A missing parenthesis; using < instead of ≤; dividing by zero
+- [ ] Using < instead of ≤; dividing by zero; a missing parenthesis
+- [ ] A missing parenthesis; dividing by zero; using < instead of ≤
+WHY: Syntax errors break the rules of the language. Logic errors run but give wrong results. Run-time errors happen while the program runs, like dividing by zero.
+
+
+## UNIT csp2 | Big Idea 2: Data | 17–22%
 ### LESSON Binary and how data is represented | 10
 **Exam weight: 17–22%.** Computers store *everything* as **bits** (0s and 1s). 8 bits make **1 byte**.
 
@@ -216,8 +258,81 @@ LINE: 3
 FIX: 8 → 1,  4 → 1,  2 → 0,  1 → 1   (binary: 1101)
 WHY: 13 doesn't use the 2's place, so that bit should be 0. The correct answer is 1101.
 
-## UNIT csp3 | Big Idea 3: Algorithms & Programming
+### LESSON 2.3–2.4 Extracting information from data | 9 | CSP 5.B, 5.D
+Programs help us find **patterns** in data that would be too big to search by hand.
 
+### Cleaning data
+Real data is messy. Before using it, you often have to **clean** it:
+- Make values consistent ("CA", "Calif." and "California" → "CA").
+- Remove duplicates and fix obvious typos.
+- Decide what to do with missing values.
+
+Cleaning makes data uniform, but it **does not** remove bias in how the data was collected.
+
+### Limits of data
+- **Correlation does not mean causation.** Two things rising together doesn't prove one causes the other.
+- A sample that leaves out some groups gives **biased** results, no matter how much data you have.
+- Larger data sets may need **parallel** or distributed processing to analyze in a reasonable time.
+- **Metadata** is data about data (the date a photo was taken, its size, its location). Changing metadata does not change the main data.
+
+### Using programs with data
+Typical operations: **filter** (keep rows that match), **transform** (change every value, like converting units), **combine** (join data sets) and **visualize** (charts reveal trends a table hides).
+
+### QUIZ
+Q: A researcher has a spreadsheet of 10,000 survey responses. Which of the following tasks could be completed using only the data in the spreadsheet and a program that filters and sorts it?
+PTS: 1
+OPT I: Finding the number of respondents who listed "soccer" as their favorite sport
+OPT II: Finding the most common favorite sport among respondents under 16
+OPT III: Determining why respondents chose their favorite sport
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: I and II only need counting and filtering. The data doesn't say **why** people chose a sport, so no amount of sorting can answer III.
+
+Q: A data set of song plays includes, for each play, the song title, artist, genre, and the time it was played. Which of the following CANNOT be determined from the data set?
+- [ ] The genre that was played most often
+- [ ] The hour of the day with the most plays
+- [x] The age of the listeners who played each song
+- [ ] The artist whose songs were played most often
+WHY: The data doesn't include anything about the listeners, so their ages can't be determined.
+
+Q: A photo app stores each image along with its date, file size, and GPS location. Which of the following is true?
+PTS: 1
+- [ ] The date and location are part of the image's pixel data.
+- [x] Deleting the location metadata does not change how the image looks.
+- [ ] Metadata always takes more storage than the image.
+- [ ] Changing the file size metadata compresses the image.
+WHY: Metadata describes the data but isn't part of it. Removing it leaves the pixels unchanged.
+
+Q: A 6-bit binary number is used to store a value. What is the largest value that can be stored?
+PTS: 1
+- [ ] 6
+- [ ] 32
+- [x] 63
+- [ ] 64
+WHY: 6 bits can hold 2⁶ = 64 different values, from 0 to 63.
+
+Q: Which of the following is true about lossless and lossy compression?
+PTS: 1
+OPT I: Lossless compression lets the original data be fully restored.
+OPT II: Lossy compression usually makes files smaller than lossless compression.
+OPT III: Lossy compression is the better choice for a text document that must be restored exactly.
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: Lossless keeps every bit, so it's needed when exact restoration matters (text, code). Lossy throws away some detail to get smaller files (photos, music, video).
+
+Q: What is the binary number `10110` in decimal?
+- [ ] 20
+- [x] 22
+- [ ] 26
+- [ ] 11
+WHY: 16 + 0 + 4 + 2 + 0 = 22.
+
+
+## UNIT csp3 | Big Idea 3: Algorithms & Programming | 30–35%
 ### LESSON AP pseudocode essentials | 14
 **Exam weight: 30–35%, the biggest Big Idea.** The exam uses its own pseudocode (you get a reference sheet).
 
@@ -501,8 +616,290 @@ LINE: 3
 FIX: max ← list[1]
 WHY: Starting at 0 fails when every value is negative. Start with the first item in the list.
 
-## UNIT csp4 | Big Idea 4: Computer Systems & Networks
+### LESSON 3.1–3.4 Variables, lists, math and strings | 11 | CSP 2.B, 3.A
+### Assignment happens in order
+`a ← b` copies the **current** value of b into a. Later changes to b don't affect a.
 
+```pseudo
+a ← 3
+b ← a
+a ← a + 4      // a is 7, b is still 3
+```
+
+To **swap** two variables you need a temporary one:
+
+```pseudo
+temp ← x
+x ← y
+y ← temp
+```
+
+### Arithmetic on the exam
+`+  -  *  /` work as usual, and `/` can give a decimal. `a MOD b` is the remainder, and MOD goes at the same level as `*` and `/`.
+- `17 MOD 5` → 2
+- `4 MOD 7` → 4 (7 goes into 4 zero times)
+- A number is even when `n MOD 2 = 0`.
+
+### Strings
+- **Concatenation** joins strings: `concat("ap", "csp")` → "apcsp".
+- A **substring** is part of a string.
+- Like lists, string positions in AP pseudocode start at **1**.
+
+### Lists and data abstraction
+A list gives many values one name, so a program can handle 3 items or 3,000 with the same code. That is **data abstraction**: it manages complexity because you don't need a separate variable for every value.
+
+An **index** less than 1 or greater than `LENGTH(list)` causes an error and the program ends.
+
+### LESSON 3.8–3.10 Iteration and list algorithms | 11 | CSP 2.B, 4.B
+### REPEAT n TIMES vs REPEAT UNTIL
+```pseudo
+REPEAT 4 TIMES
+{
+   x ← x * 2
+}
+
+REPEAT UNTIL (count = 10)   // stops when the condition becomes TRUE
+{
+   count ← count + 1
+}
+```
+
+If the condition in `REPEAT UNTIL` is already true, the body runs **0 times**. If it never becomes true, the loop is **infinite**.
+
+### Standard list algorithms
+```pseudo
+// Find the maximum
+max ← list[1]
+FOR EACH item IN list
+{
+   IF (item > max)
+   {
+      max ← item
+   }
+}
+
+// Count matches
+count ← 0
+FOR EACH item IN list
+{
+   IF (item = target)
+   {
+      count ← count + 1
+   }
+}
+```
+
+A common mistake in "find the minimum" is starting `min ← 0`. If every value is positive, the answer will be wrong. Start with the first element instead.
+
+### Traversing by index
+```pseudo
+i ← 1
+REPEAT UNTIL (i > LENGTH(list))
+{
+   list[i] ← list[i] * 10
+   i ← i + 1
+}
+```
+
+Careful: when you `REMOVE` items while moving forward through a list, the items after shift left, so the next one can be skipped.
+
+### LESSON 3.12–3.15 Procedures, libraries and random values | 9 | CSP 3.B, 3.C
+### Calling and writing procedures
+- **Parameters** are the inputs listed when a procedure is defined.
+- **Arguments** are the values passed in when it's called.
+- `RETURN(x)` sends a value back and **immediately ends** the procedure.
+
+**Procedural abstraction** means you can use a procedure by knowing *what* it does, not *how*. It lets you change the inside of the procedure without breaking the code that calls it, as long as it still does the same thing.
+
+### Libraries and APIs
+A **library** is a collection of procedures you can use in your programs. An **API** (application program interface) is the documentation that explains how to use them: their names, parameters and what they return.
+
+### RANDOM
+`RANDOM(a, b)` gives a random **integer** from a to b, **including both ends**. Each value is equally likely.
+
+```pseudo
+roll ← RANDOM(1, 6)
+IF (roll = 6)
+{
+   DISPLAY("Six!")
+}
+```
+
+`RANDOM(1, 4) = 1` is true about 25% of the time.
+
+### LESSON 3.16–3.18 Simulations, efficiency and undecidable problems | 10 | CSP 1.D, 4.A
+### Simulations
+A **simulation** is a program that models something real, like traffic, disease spread or dice games.
+- It **simplifies** the real world, leaving out details. That can introduce bias.
+- It's useful when the real experiment would be too slow, too expensive, too dangerous or impossible.
+- Results are only as good as the model's assumptions.
+
+### Efficiency
+| Algorithm grows like | Called | Runs in reasonable time? |
+|---|---|---|
+| n, n², n³ (polynomial) | Reasonable | ✅ Yes |
+| 2ⁿ, n! (exponential, factorial) | Unreasonable | ❌ Only for tiny inputs |
+
+When an exact solution would take unreasonable time, programmers use a **heuristic**: an approach that finds a good-enough answer quickly, without guaranteeing the best one.
+
+### Decidable and undecidable problems
+- A **decidable** problem has an algorithm that gives a correct yes/no answer for **every** input. Example: "Is this number even?"
+- An **undecidable** problem has **no** algorithm that works for all inputs. The classic example is the **halting problem**: deciding whether any program will eventually stop.
+- An undecidable problem might still be solvable for *some* inputs, just not all.
+
+### Binary search reminder (3.11)
+Binary search only works on **sorted** data. Each step cuts the remaining range in half, so 1,000 items need at most about 10 checks (2¹⁰ = 1,024).
+
+### QUIZ
+Q: Consider the following code segment.
+PTS: 1
+```pseudo
+a ← 10
+b ← 4
+a ← a + b
+b ← a - b
+a ← a - b
+DISPLAY(a)
+DISPLAY(b)
+```
+ASK: What is displayed as a result of executing the code segment?
+- [x] 4 10
+- [ ] 10 4
+- [ ] 14 10
+- [ ] 4 4
+WHY: a becomes 14. Then b = 14 − 4 = 10. Then a = 14 − 10 = 4. This trick swaps the two values without a temporary variable.
+
+Q: What is displayed as a result of executing the following code segment?
+PTS: 1
+```pseudo
+x ← 25 MOD 7
+y ← 7 MOD 25
+DISPLAY(x + y)
+```
+- [ ] 3
+- [ ] 7
+- [x] 11
+- [ ] 32
+WHY: 25 MOD 7 = 4, because 7 × 3 = 21 and 25 − 21 = 4. 7 MOD 25 = 7, because 25 doesn't fit into 7. 4 + 7 = 11.
+
+Q: The procedure `findMin` is intended to return the smallest value in the non-empty list `nums`.
+PTS: 1
+```pseudo
+PROCEDURE findMin(nums)
+{
+   min ← /* missing code */
+   FOR EACH n IN nums
+   {
+      IF (n < min)
+      {
+         min ← n
+      }
+   }
+   RETURN(min)
+}
+```
+ASK: Which of the following can replace `/* missing code */` so that the procedure works as intended for every non-empty list of integers?
+OPT I: `0`
+OPT II: `nums[1]`
+OPT III: `nums[LENGTH(nums)]`
+- [ ] I only
+- [ ] II only
+- [x] II and III only
+- [ ] I, II and III
+WHY: Starting with any value from the list works, because the true minimum is at most that value. Starting at 0 fails when every number is positive: `findMin([5, 8])` would return 0.
+
+Q: Consider the following code segment.
+PTS: 1
+```pseudo
+count ← 0
+n ← 1
+REPEAT UNTIL (n > 20)
+{
+   n ← n * 3
+   count ← count + 1
+}
+DISPLAY(count)
+```
+ASK: What is displayed as a result of executing the code segment?
+- [ ] 2
+- [x] 3
+- [ ] 4
+- [ ] 20
+WHY: n goes 1 → 3 → 9 → 27. After the third pass n is 27, which is greater than 20, so the loop stops with count = 3.
+
+Q: Which of the following can be displayed by the code segment below?
+PTS: 1
+```pseudo
+a ← RANDOM(1, 3)
+b ← RANDOM(2, 4)
+DISPLAY(a + b)
+```
+OPT I: 3
+OPT II: 7
+OPT III: 8
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: The smallest sum is 1 + 2 = 3 and the largest is 3 + 4 = 7. 8 is impossible.
+
+Q: The list `wordList` contains `["the", "cat", "the", "hat"]`. A programmer wants to remove every "the" with the following code.
+PTS: 1
+```pseudo
+i ← 1
+REPEAT UNTIL (i > LENGTH(wordList))
+{
+   IF (wordList[i] = "the")
+   {
+      REMOVE(wordList, i)
+   }
+   i ← i + 1
+}
+```
+ASK: What is `wordList` after the code segment runs?
+- [x] ["cat", "hat"]
+- [ ] ["cat", "the", "hat"]
+- [ ] ["the", "hat"]
+- [ ] An error occurs because i goes past the end of the list.
+WHY: When i = 1, "the" is removed and the list becomes ["cat", "the", "hat"]. i becomes 2, which is "the", so it's removed too, giving ["cat", "hat"]. i becomes 3, which is greater than the length 2, so the loop stops. It works here only because the two "the"s weren't next to each other; ["the", "the"] would leave one behind.
+
+Q: Which of the following problems is undecidable?
+PTS: 1
+- [ ] Determining whether a number is prime
+- [ ] Sorting a list of one million names
+- [x] Determining whether any given program will eventually stop running for any given input
+- [ ] Finding the shortest route between two cities on a map
+WHY: That is the halting problem, which has been proven to have no algorithm that works for every case. The others are decidable, even if some take a long time.
+
+Q: An algorithm takes 2ⁿ steps for an input of size n. Which of the following best describes it?
+PTS: 1
+- [ ] It runs in reasonable time because 2 is a small number.
+- [x] It runs in unreasonable time, so a heuristic may be needed for large inputs.
+- [ ] It is undecidable.
+- [ ] It runs faster than an algorithm that takes n² steps for every n.
+WHY: Exponential growth is unreasonable: at n = 100, 2¹⁰⁰ is far more steps than any computer could finish. Unreasonable is not the same as undecidable; the problem can still be solved for small n.
+
+Q: A sorted list has 500 elements. What is the greatest number of elements a binary search must examine to find a value or decide it isn't there?
+PTS: 1
+- [ ] 8
+- [x] 9
+- [ ] 250
+- [ ] 500
+WHY: Each check halves the range: 500 → 250 → 125 → 62 → 31 → 15 → 7 → 3 → 1. That's at most 9 checks (2⁹ = 512 ≥ 500).
+
+Q: Which of the following are benefits of procedural abstraction?
+PTS: 1
+OPT I: The same procedure can be called many times instead of repeating code.
+OPT II: A procedure's code can be improved without changing the code that calls it, as long as it still does the same job.
+OPT III: A program that uses procedures always runs faster.
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: Abstraction reduces repetition and hides details. It doesn't make programs faster.
+
+
+## UNIT csp4 | Big Idea 4: Computer Systems & Networks | 11–15%
 ### LESSON How the Internet works | 10
 **Exam weight: 11–15%.**
 
@@ -585,8 +982,52 @@ Q: Why was IPv6 created?
 - [ ] To encrypt all traffic
 WHY: IPv6 uses 128-bit addresses, compared with 32 bits for IPv4.
 
-## UNIT csp5 | Big Idea 5: Impact of Computing
+### QUIZ
+Q: Consider the network below, where each line is a direct connection between two devices.
+PTS: 1
+```text
+A — B — C
+|       |
+D — E — F
+```
+ASK: Which of the following statements are true?
+OPT I: If the connection between B and C fails, A can still send data to C.
+OPT II: The network has no single connection whose failure would disconnect any device.
+OPT III: If device E fails, A can no longer reach F.
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: The six connections form one big loop, so removing any **one** connection leaves another path (I and II). If E fails, A can still reach F through B and C, so III is false.
 
+Q: A task has three steps that take 40, 30 and 50 seconds. The 40- and 30-second steps can run in parallel, but the 50-second step must wait until both finish. Running on two processors, how long does the whole task take?
+PTS: 1
+- [ ] 50 seconds
+- [x] 90 seconds
+- [ ] 120 seconds
+- [ ] 70 seconds
+WHY: The parallel part takes as long as its slowest step, 40 seconds. Then the 50-second step runs: 40 + 50 = 90. Sequentially it would take 120, so the speedup is 120 / 90 ≈ 1.33.
+
+Q: Which of the following best describes the role of the Domain Name System (DNS)?
+- [x] It translates names like example.com into IP addresses.
+- [ ] It splits messages into packets.
+- [ ] It encrypts data sent between a browser and a server.
+- [ ] It guarantees packets arrive in order.
+WHY: DNS is like a phone book for the Internet. TCP handles reliable, ordered delivery, and TLS (the S in HTTPS) handles encryption.
+
+Q: Which of the following are true about how data is sent on the Internet?
+PTS: 1
+OPT I: Packets from the same message can take different paths.
+OPT II: Packets can arrive out of order and be put back together.
+OPT III: Every packet must go through one central computer that controls the Internet.
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: The Internet is decentralized and packets are routed independently, which also makes it fault tolerant. There is no central computer.
+
+
+## UNIT csp5 | Big Idea 5: Impact of Computing | 21–26%
 ### LESSON Society, bias and the digital divide | 9
 **Exam weight: 21–26%.** Computing innovations can be **beneficial and harmful at the same time**, sometimes in ways their creators never intended.
 
@@ -673,3 +1114,48 @@ Q: Which of these is an example of **citizen science**?
 - [ ] A scientist codes alone in a lab
 - [ ] Students take an online test
 WHY: In citizen science, members of the public help collect or analyze scientific data.
+
+### QUIZ
+Q: *Reading passage:* A city installs smart streetlights that dim when no one is nearby and brighten when sensors detect motion. The lights also record how many people pass each hour, and the city publishes that data online.
+PTS: 1
+ASK: Which of the following is a potential harmful effect of this innovation?
+- [ ] The city uses less electricity on empty streets.
+- [ ] Researchers can study foot traffic to plan new sidewalks.
+- [x] Combined with other data, the published counts could reveal patterns about when specific people come and go.
+- [ ] Streets are brighter when people are walking.
+WHY: Aggregated data can sometimes be combined with other sources to identify people, which is a privacy risk. The other choices are benefits.
+
+Q: Which of the following are examples of personally identifiable information (PII)?
+PTS: 1
+OPT I: A person's home address
+OPT II: A person's favorite color
+OPT III: A person's Social Security number
+- [ ] I only
+- [x] I and III only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: PII is information that can identify a specific person. Lots of people share a favorite color, so on its own it doesn't identify anyone.
+
+Q: A software developer finds code online that is published under a Creative Commons license. Which of the following is the best way to use it?
+PTS: 1
+- [ ] Use it without restriction, since anything online is free to use.
+- [x] Follow the terms of the license, such as giving credit to the author.
+- [ ] Rename the variables so it counts as the developer's own work.
+- [ ] It may never be used, because all code is copyrighted.
+WHY: Creative Commons licenses let creators share work while setting conditions, such as attribution. Changing variable names doesn't make someone else's work your own.
+
+Q: Which of the following best describes public key encryption?
+PTS: 1
+- [ ] The same secret key is used to encrypt and decrypt.
+- [x] Anyone can encrypt a message with the public key, but only the holder of the matching private key can decrypt it.
+- [ ] The public key is used to decrypt and must be kept secret.
+- [ ] Messages are not encrypted; they are only signed.
+WHY: That's asymmetric encryption. Symmetric encryption is the one that uses a single shared key.
+
+Q: Which of the following is an example of the digital divide?
+- [ ] A company uses machine learning to recommend videos.
+- [x] Students in a rural area cannot complete online homework because they lack reliable Internet access.
+- [ ] A website is translated into five languages.
+- [ ] A user forgets their password.
+WHY: The digital divide is unequal access to computing and the Internet, often because of location, income or other factors.
+

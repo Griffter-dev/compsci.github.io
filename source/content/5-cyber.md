@@ -73,6 +73,80 @@ Q: An attacker changes students' grades in a database. Which part of the CIA tri
 - [ ] None of them
 WHY: Integrity means data hasn't been altered without authorization.
 
+### LESSON Security controls and zero trust | 10 | Sec+ 1.1, 1.2
+A **control** is anything that reduces risk. Security+ sorts controls two ways.
+
+**By category** (what kind of thing it is):
+| Category | Examples |
+|---|---|
+| Technical | Firewalls, encryption, antivirus, MFA |
+| Managerial | Policies, risk assessments, security plans |
+| Operational | Training, guards doing patrols, backups done by people |
+| Physical | Locks, fences, badge readers, cameras |
+
+**By type** (what it does):
+| Type | Goal | Example |
+|---|---|---|
+| Preventive | Stop it from happening | Locked door, firewall rule |
+| Deterrent | Discourage the attacker | Warning sign, visible camera |
+| Detective | Notice it happened | Alarm, log review, IDS |
+| Corrective | Fix it afterward | Restoring from backup, patching |
+| Compensating | Stand in when the main control isn't possible | Extra monitoring on an old system that can't be patched |
+
+### AAA and non-repudiation
+- **Authentication:** proving who you are.
+- **Authorization:** what you're allowed to do.
+- **Accounting:** keeping records (logs) of what you did.
+- **Non-repudiation:** proof someone did something that they can't deny later. Digital signatures provide it.
+
+### Zero trust
+Old networks trusted anything **inside** the firewall. **Zero trust** means "never trust, always verify": every user and device is checked every time it asks for something, no matter where it is, and gets only the access it needs (**least privilege**).
+
+### QUIZ
+Q: A school installs a camera in the server room and posts a sign that says "This area is monitored." Which control types does the camera with the sign provide?
+PTS: 1
+OPT I: Deterrent
+OPT II: Detective
+OPT III: Corrective
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: The visible camera and sign discourage intruders (deterrent), and the recording shows what happened (detective). A camera doesn't fix anything afterward, so it isn't corrective.
+
+Q: An employee says she never sent an email that harmed the company. The email was digitally signed with her private key. Which security concept proves she sent it?
+- [ ] Availability
+- [ ] Authorization
+- [x] Non-repudiation
+- [ ] Obfuscation
+WHY: Only the holder of the private key could have made that signature, so she can't deny sending it.
+
+Q: Which of the following is an example of a managerial control?
+PTS: 1
+- [ ] A firewall that blocks port 23
+- [x] A written policy requiring passwords to be changed after a breach
+- [ ] A fence around the parking lot
+- [ ] Antivirus software
+WHY: Managerial controls are policies, plans and procedures. The firewall and antivirus are technical controls, and the fence is physical.
+
+Q: A ransomware attack encrypts a hospital's patient records so doctors can't open them. Which part of the CIA triad is most directly affected?
+- [ ] Confidentiality
+- [ ] Integrity
+- [x] Availability
+- [ ] Authentication
+WHY: The data still exists and wasn't necessarily changed or leaked, but the people who need it can't get to it.
+
+Q: Which of the following statements describe a zero trust approach?
+PTS: 1
+OPT I: A laptop is checked every time it requests access to a resource, even inside the school network.
+OPT II: Users get only the access they need for their job.
+OPT III: Once a device passes the firewall, it is trusted for the rest of the day.
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: Zero trust never assumes something is safe because of where it is. III describes the old "castle and moat" model.
+
 ## UNIT cy2 | Passwords & Access Control
 
 ### LESSON Passwords, hashing and authentication | 12
@@ -357,3 +431,235 @@ def login(db, username, password):
 LINE: 3
 FIX: return db.execute("SELECT * FROM users WHERE name = ? AND pw = ?", (username, pw_hash))
 WHY: Building SQL by gluing strings together allows **SQL injection**. Use a parameterized query instead.
+
+## UNIT cy5 | System Hardening: Windows & Linux
+### LESSON Hardening a Windows computer | 11 | CyberPatriot
+**Hardening** means removing ways a system could be attacked. It's exactly what CyberPatriot teams do on their practice images.
+
+### Accounts
+- Delete or disable accounts that shouldn't exist, including **Guest**.
+- Only people who need it should be in the **Administrators** group.
+- Rename or disable the built-in Administrator account if your rules allow it.
+- Give every account a strong password.
+
+### Local Security Policy (`secpol.msc`)
+| Setting | Typical secure value |
+|---|---|
+| Minimum password length | 10 or more characters |
+| Maximum password age | 60–90 days |
+| Password must meet complexity requirements | Enabled |
+| Store passwords using reversible encryption | **Disabled** |
+| Account lockout threshold | About 5–10 bad attempts |
+| Audit logon events | Success and failure |
+
+### Services, updates and the firewall
+- Turn on **Windows Update** and install updates.
+- Make sure **Windows Defender Firewall** and **Microsoft Defender Antivirus** are on.
+- Stop and disable services you don't need, like Remote Desktop, Telnet or FTP, unless the scenario says they're required.
+- Remove **prohibited software** (hacking tools, games on a work machine) and **prohibited files** (like music files where they aren't allowed).
+
+> Always read the scenario first. Disabling a service that the business actually needs costs points.
+
+### LESSON Hardening a Linux computer | 12 | CyberPatriot
+### Key commands
+| Command | What it does |
+|---|---|
+| `sudo command` | Run one command as the administrator (root) |
+| `sudo apt update && sudo apt upgrade` | Update the list of packages, then install updates |
+| `sudo ufw enable` | Turn on the Uncomplicated Firewall |
+| `sudo ufw deny 23` | Block port 23 (Telnet) |
+| `sudo passwd -l bob` | Lock bob's password |
+| `sudo deluser bob` | Delete user bob |
+| `sudo deluser bob sudo` | Remove bob from the admin (sudo) group |
+| `sudo systemctl disable --now telnet.socket` | Stop a service and keep it from starting |
+| `ls -l` | List files with their permissions |
+| `grep "Failed" /var/log/auth.log` | Find failed login attempts |
+
+### Important files
+- `/etc/passwd` lists user accounts (anyone can read it).
+- `/etc/shadow` holds password **hashes** and must be readable only by root.
+- `/etc/group` lists groups. Members of `sudo` (or `wheel`) are admins.
+- `/etc/ssh/sshd_config` has SSH settings. Set `PermitRootLogin no`.
+- `/etc/login.defs` has password aging settings like `PASS_MAX_DAYS 90`.
+
+### File permissions
+`ls -l` shows something like `-rwxr-x---`. After the first character (file type), there are three groups of three: **owner**, **group**, **others**. Each is **r**ead (4), **w**rite (2) and e**x**ecute (1).
+
+| Number | Letters | Meaning |
+|---|---|---|
+| 7 | rwx | 4 + 2 + 1 |
+| 6 | rw- | 4 + 2 |
+| 5 | r-x | 4 + 1 |
+| 4 | r-- | 4 |
+| 0 | --- | nothing |
+
+So `chmod 640 grades.txt` gives the owner read/write, the group read-only and everyone else nothing: `-rw-r-----`.
+
+### QUIZ
+Q: Consider the following command.
+PTS: 1
+```bash
+chmod 754 backup.sh
+```
+ASK: Which permissions does `backup.sh` have after the command runs?
+- [x] `-rwxr-xr--`
+- [ ] `-rwxr-x-r-`
+- [ ] `-rw-r-xr--`
+- [ ] `-rwxrw-r--`
+WHY: 7 = rwx for the owner, 5 = r-x for the group, 4 = r-- for everyone else.
+
+Q: A file is listed as `-rw-rw-rw-`. Which `chmod` command gives that permission?
+- [ ] `chmod 777`
+- [x] `chmod 666`
+- [ ] `chmod 644`
+- [ ] `chmod 555`
+WHY: rw- is 4 + 2 = 6 for each of the three groups. Letting everyone write a file is usually a security problem.
+
+Q: The scenario for a Linux image says the only authorized administrators are `alice` and `ben`. Which of the following commands help secure the system?
+PTS: 1
+OPT I: `sudo deluser carl sudo` (carl is an authorized standard user who is in the sudo group)
+OPT II: `sudo ufw enable`
+OPT III: `sudo chmod 777 /etc/shadow`
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: I removes admin rights from someone who shouldn't have them, and II turns on the firewall. III would let every user read and change the password hashes, which is a serious vulnerability.
+
+Q: Which Windows Local Security Policy setting should be **disabled**?
+- [ ] Password must meet complexity requirements
+- [x] Store passwords using reversible encryption
+- [ ] Audit account logon events
+- [ ] Account lockout threshold
+WHY: Reversible encryption is basically like storing passwords in plain text. The others should be turned on.
+
+Q: Which file should only be readable by root on a Linux system?
+- [ ] /etc/passwd
+- [x] /etc/shadow
+- [ ] /etc/hostname
+- [ ] /home/alice/notes.txt
+WHY: /etc/shadow stores the password hashes. /etc/passwd lists accounts and is meant to be readable by everyone.
+
+Q: An administrator runs the following command. What does it show?
+PTS: 1
+```bash
+grep "Failed password" /var/log/auth.log | wc -l
+```
+- [ ] The list of all users' passwords
+- [x] How many lines in the authentication log record a failed password attempt
+- [ ] Every successful login
+- [ ] It deletes the failed attempts from the log
+WHY: `grep` keeps the lines containing "Failed password", and `wc -l` counts them. A big number could mean a brute-force attack.
+
+## UNIT cy6 | Security Operations & Incident Response
+### LESSON Incident response | 11 | Sec+ 4.8
+When an attack happens, teams follow a plan. The NIST incident response steps are:
+
+1. **Preparation:** plans, tools, training and backups *before* anything happens.
+2. **Detection and analysis:** noticing something is wrong (alerts, logs, a user report) and figuring out what it is.
+3. **Containment:** stopping it from spreading, such as unplugging an infected computer from the network.
+4. **Eradication:** removing the cause (deleting malware, closing the hole).
+5. **Recovery:** getting systems back to normal and watching them closely.
+6. **Lessons learned:** a meeting afterward about what to improve.
+
+### Evidence
+- Keep a **chain of custody**: a record of everyone who handled the evidence, and when.
+- Collect the most **volatile** evidence first. Memory (RAM) disappears when power goes off, so capture it before the disk.
+- Work on a **copy** of the disk, and record its **hash** to prove it wasn't changed.
+
+### Logs and monitoring
+A **SIEM** (security information and event management) tool gathers logs from many systems in one place and raises alerts. An **IDS** detects suspicious traffic, and an **IPS** detects it *and* blocks it.
+
+### LESSON Risk, vulnerabilities and backups | 10 | Sec+ 4.3, 5.2
+### Risk
+**Risk ≈ likelihood × impact.** Organizations can respond to a risk four ways:
+| Response | Meaning | Example |
+|---|---|---|
+| Mitigate | Reduce it | Add MFA |
+| Transfer | Make someone else carry it | Buy cyber insurance |
+| Avoid | Stop doing the risky thing | Turn off an unneeded service |
+| Accept | Live with it | The fix costs more than the possible loss |
+
+### Finding vulnerabilities
+- A **vulnerability scan** checks systems for known weaknesses. Each is listed as a **CVE** and rated by **CVSS** (0–10; 9.0+ is critical).
+- A **penetration test** has an authorized expert actually try to break in. It always needs **written permission** first.
+- **Patch management** means testing and installing updates on a schedule.
+
+### Backups: the 3-2-1 rule
+Keep **3** copies of important data, on **2** different kinds of storage, with **1** copy offsite (or offline). An offline copy can't be encrypted by ransomware.
+
+### QUIZ
+Q: A student's laptop shows a ransom note, and files on the school's shared drive are starting to be encrypted. According to the incident response process, what should the IT team do FIRST?
+PTS: 1
+- [ ] Hold a lessons-learned meeting.
+- [ ] Reinstall the operating system on every school computer.
+- [x] Disconnect the infected laptop from the network.
+- [ ] Pay the ransom.
+WHY: Containment comes before eradication and recovery. Disconnecting stops the encryption from spreading to more files.
+
+Q: Which of the following are examples of risk transfer?
+PTS: 1
+OPT I: Buying cyber insurance
+OPT II: Paying a cloud company to run the email server under a contract that makes it responsible for security
+OPT III: Turning off an online feature that collects credit card numbers
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: I and II move some of the risk's cost to another party. Turning off the feature removes the risk, which is avoidance.
+
+Q: Which order of collecting evidence follows the order of volatility?
+- [x] RAM, then the hard drive, then backups
+- [ ] Backups, then the hard drive, then RAM
+- [ ] The hard drive, then RAM, then backups
+- [ ] Order does not matter
+WHY: RAM is lost when the computer turns off, so it must be captured first. Backups are the least volatile.
+
+Q: Consider the following Python code, which scans a web server log.
+PTS: 1
+```python
+log = ["10.0.0.5 GET /login 401",
+       "10.0.0.5 GET /login 401",
+       "10.0.0.9 GET /home 200",
+       "10.0.0.5 GET /login 401",
+       "10.0.0.9 GET /login 200"]
+fails = {}
+for line in log:
+    ip, method, page, status = line.split()
+    if status == "401":
+        fails[ip] = fails.get(ip, 0) + 1
+for ip, n in fails.items():
+    if n >= 3:
+        print("ALERT", ip, n)
+```
+ASK: What is printed as a result of executing the code segment?
+- [x] ALERT 10.0.0.5 3
+- [ ] ALERT 10.0.0.5 3, then ALERT 10.0.0.9 1
+- [ ] ALERT 10.0.0.9 2
+- [ ] Nothing is printed.
+WHY: Status 401 means a failed login. 10.0.0.5 has three, which reaches the threshold. 10.0.0.9 has no failures. This is a tiny version of what a SIEM rule does.
+
+Q: Which of the following does the 3-2-1 backup rule require?
+PTS: 1
+OPT I: Three copies of the data
+OPT II: Two different kinds of storage media
+OPT III: One copy kept offsite or offline
+- [ ] I only
+- [ ] I and II only
+- [ ] II and III only
+- [x] I, II and III
+WHY: That is the whole rule: 3 copies, 2 media types and 1 offsite.
+
+Q: A vulnerability scanner reports a flaw with a CVSS score of 9.8. What does this mean?
+- [ ] The system is 98% secure.
+- [x] The flaw is critical and should be patched as soon as possible.
+- [ ] The flaw has already been exploited 98 times.
+- [ ] It is a low-priority finding.
+WHY: CVSS rates severity from 0 to 10. Anything 9.0 or higher is critical.
+
+Q: Which is the key difference between an IDS and an IPS?
+- [ ] An IDS is software and an IPS is hardware.
+- [x] An IDS alerts on suspicious traffic; an IPS can also block it.
+- [ ] An IPS only works on wireless networks.
+- [ ] There is no difference.
+WHY: Detection only reports. Prevention also takes action.

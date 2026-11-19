@@ -10,7 +10,7 @@ function runQuiz(view, o) {
   };
   const qs = o.questions.slice();
   const rnd = o.seed ? seeded(o.seed) : Math.random;
-  const order = qs.map(q => q.kind === 'mcq' ? (o.shuffleChoices === false ? q.choices.map((_, i) => i) : shuffle(q.choices.map((_, i) => i), rnd)) : null);
+  const order = qs.map(q => q.kind === 'mcq' ? (o.shuffleChoices === false ? q.choices.map((_, i) => i) : choiceOrder(q, rnd)) : null);
   let timer = null, autoT = null;
   const finish = (reason) => {
     if (st.done) return; st.done = true;
@@ -48,15 +48,15 @@ function runQuiz(view, o) {
 
   function show() {
     if (st.done) return;
-    if (st.idx >= qs.length) { if (o.endless && o.more) { qs.push(...o.more()); order.push(...qs.slice(order.length).map(q => q.kind === 'mcq' ? shuffle(q.choices.map((_, i) => i)) : null)); } else return finish('done'); }
+    if (st.idx >= qs.length) { if (o.endless && o.more) { qs.push(...o.more()); order.push(...qs.slice(order.length).map(q => q.kind === 'mcq' ? choiceOrder(q) : null)); } else return finish('done'); }
     const q = qs[st.idx]; st.answered = false; st.qStart = Date.now();
     const typeLabel = q.type === 'trace' ? 'Trace the code' : q.type === 'bug' ? 'Find the bug' : q.type === 'fill' ? 'Fill in the code' : q.type === 'squad' ? `Squad question · by ${esc(q.authorName || 'a squadmate')}` : 'Question';
     const src = UNIT[q.unit] ? `${COURSE[q.course].short} · ${UNIT[q.unit].title}` : '';
     view.innerHTML = `<div class="wrap"><div class="qcard">${header()}
       <div class="card" id="qbox" data-qid="${esc(q.id)}">
         <div class="spread" style="margin-bottom:10px"><span class="pill accent">${typeLabel}</span>${src ? `<small class="muted">${esc(src)}</small>` : ''}</div>
-        <div class="qtext">${fmt(q.q)}</div>
-        ${q.kind === 'fill' ? `<div id="q-fill">${fillHtml(q, 'qb')}</div><div class="row" style="justify-content:flex-end"><button class="btn primary" id="q-check">✓ Check</button></div>` : q.kind === 'bug' ? bugHtml(q) : (q.code ? codeBlock(q.code, q.lang, false) : '') + `<div class="choices" role="group" aria-label="Answer choices">${order[st.idx].map((ci, k) => `<button class="choice" data-ci="${ci}"><span class="key">${k + 1}</span><span>${fmt(q.choices[ci])}</span></button>`).join('')}</div>`}
+        <div class="qtext">${fmt(q.q)}${qPts(q)}</div>
+        ${q.kind === 'fill' ? `<div id="q-fill">${fillHtml(q, 'qb')}</div><div class="row" style="justify-content:flex-end"><button class="btn primary" id="q-check">✓ Check</button></div>` : q.kind === 'bug' ? bugHtml(q) : qExtra(q) + `<div class="choices${q.sheet && q.choices.every(c => c.length < 34) ? ' grid2' : ''}" role="group" aria-label="Answer choices">${order[st.idx].map((ci, k) => `<button class="choice" data-ci="${ci}"><span class="key">${q.sheet ? 'ABCDE'[k] : k + 1}</span><span>${fmt(q.choices[ci])}</span></button>`).join('')}</div>`}
         <div id="q-after"></div>
       </div></div></div>`;
     $('#q-quit', view).onclick = quit;
@@ -100,7 +100,7 @@ function runQuiz(view, o) {
   }
   function onKey(e) {
     if (e.target.matches('input,textarea,select') || $('.modal')) return;
-    if (/^[1-6]$/.test(e.key)) { const b = $$('.choice', view)[+e.key - 1]; if (b && !b.disabled) b.click(); }
+    const kk = /^[a-e]$/i.test(e.key) ? 'abcde'.indexOf(e.key.toLowerCase()) + 1 : +e.key; if (kk >= 1 && kk <= 6 && !e.ctrlKey && !e.metaKey) { const b = $$('.choice', view)[kk - 1]; if (b && !b.disabled) b.click(); }
     else if ((e.key === 'Enter' || e.key === ' ') && st.answered) { const n = $('#q-next', view); if (n && document.activeElement !== n) { e.preventDefault(); n.click(); } }
   }
   document.addEventListener('keydown', onKey);
@@ -125,7 +125,7 @@ function showResult(view, st, o, extraHtml = '') {
       ${o.again ? `<button class="btn primary" id="r-again">↻ Play again</button>` : ''}
       <a class="btn" href="#${o.back || '/practice'}">${esc(o.backLabel || 'Done')}</a>
     </div></div>
-    ${missed.length ? `<h3 style="margin-top:30px">Review what you missed</h3><div class="stack">${missed.map(q => `<div class="card"><div class="qtext" style="font-size:1rem">${fmt(q.q)}</div>${q.code ? (q.kind === 'fill' ? codeBlock(q.code.replace(/\u0000(\d+)\u0000/g, (_, b) => '[' + q.blanks[+b][0] + ']'), q.lang, false) : codeBlock(q.code, q.lang, false)) : ''}<div class="explain"><b>Answer: ${q.kind === 'bug' ? 'line ' + q.lines.join(' or ') : q.kind === 'fill' ? 'see the [bracketed] blanks' : fmt(q.choices[q.a])}</b>${q.fix ? `<div class="fixline">✔ ${esc(q.fix)}</div>` : ''}${fmt(q.why)}</div></div>`).join('')}</div>
+    ${missed.length ? `<h3 style="margin-top:30px">Review what you missed</h3><div class="stack">${missed.map(q => `<div class="card"><div class="qtext" style="font-size:1rem">${fmt(q.q)}</div>${q.code ? (q.kind === 'fill' ? codeBlock(q.code.replace(/\u0000(\d+)\u0000/g, (_, b) => '[' + q.blanks[+b][0] + ']'), q.lang, false) : qExtra(q)) : qExtra(q)}<div class="explain"><b>Answer: ${q.kind === 'bug' ? 'line ' + q.lines.join(' or ') : q.kind === 'fill' ? 'see the [bracketed] blanks' : fmt(q.choices[q.a])}</b>${q.fix ? `<div class="fixline">✔ ${esc(q.fix)}</div>` : ''}${fmt(q.why)}</div></div>`).join('')}</div>
       <p style="margin-top:14px"><a href="#/quiz?mode=review">Practice your mistakes later →</a></p>` : ''}
   </div>`;
   if (o.again) $('#r-again', view).onclick = () => o.again();

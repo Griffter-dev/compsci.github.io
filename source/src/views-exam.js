@@ -10,7 +10,7 @@ const EXAM_MODES = {
   mini: { name: 'Mini exam', n: 14, mins: 30, blurb: '14 questions in 30 minutes, with the same unit mix. Great for a quick check.' },
   unit: { name: 'Unit test', n: 15, mins: 35, blurb: '15 questions from one unit in 35 minutes.' },
 };
-const skillChip = s => `<span class="pill skill" title="Practice ${esc(s[0])}: ${esc(PRACTICES[s[0]] || '')}">${esc(s)}</span>`;
+const skillChip = s => `<span class="pill skill" title="${/^\d\.[A-Z]$/.test(s) ? `Practice ${esc(s[0])}: ${esc(PRACTICES[s[0]] || '')}` : esc(s)}">${esc(s)}</span>`;
 function csaMcqPool(unitId) {
   const c = COURSE.csa; if (!c) return [];
   return c.units.filter(u => !unitId || u.id === unitId).flatMap(u => [...u.quiz, ...u.trace, ...u.lessons.flatMap(l => (l.quizzes || []).map(q => ({ ...q, unit: u.id, course: 'csa' })))]).filter(q => q.kind === 'mcq');
@@ -65,7 +65,7 @@ route('/exam/run', (view) => {
   const d = S.examDraft; if (!d) return go('/exam');
   if (d.section >= 2) return frqSection(view, d);
   const qs = d.qids.map(qById).filter(Boolean);
-  const order = qs.map(q => shuffle(q.choices.map((_, i) => i), seeded(d.seed + q.id)));
+  const order = qs.map(q => choiceOrder(q, seeded(d.seed + q.id)));
   let timer;
   const left = () => Math.max(0, (d.endsAt - Date.now()) / 1000);
   const draw = () => {
@@ -73,7 +73,7 @@ route('/exam/run', (view) => {
     view.innerHTML = `<div class="wrap exam"><div class="exam-top"><div><b>${esc(EXAM_MODES[d.mode].name)}</b> · Section I<br><small class="muted">Question ${i + 1} of ${qs.length} · ${Object.keys(d.answers).length} answered</small></div><div class="timer" id="ex-timer">${fmtTime(left())}</div><button class="btn sm primary" id="ex-review">Review & submit</button></div>
       <div class="exam-grid">
         <div class="card" id="qbox" data-qid="${esc(q.id)}"><div class="spread" style="margin-bottom:8px"><span class="pill">${esc(UNIT[q.unit]?.title.replace(/^Unit (\d+):.*/, 'Unit $1') || '')}</span><button class="btn sm ghost ${d.flags.includes(i) ? 'flagged' : ''}" id="flag">${d.flags.includes(i) ? '🚩 Flagged' : '⚑ Flag for review'}</button></div>
-          <div class="qtext">${fmt(q.q)}</div>${q.code ? codeBlock(q.code, q.lang, false) : ''}
+          <div class="qtext">${fmt(q.q)}${qPts(q)}</div>${qExtra(q)}
           <div class="choices">${order[i].map((ci, k) => `<button class="choice ${d.answers[i] === ci ? 'picked' : ''}" data-ci="${ci}" aria-pressed="${d.answers[i] === ci}"><span class="key">${'ABCDE'[k]}</span><span>${fmt(q.choices[ci])}</span></button>`).join('')}</div>
           <div class="qfoot" style="justify-content:space-between"><button class="btn" id="prev" ${i === 0 ? 'disabled' : ''}>← Previous</button><button class="btn primary" id="next">${i === qs.length - 1 ? 'Review & submit' : 'Next →'}</button></div></div>
         <aside class="card navgrid" aria-label="Question navigator"><b>Questions</b><div class="nav-nums">${qs.map((_, k) => `<button class="${k === i ? 'cur' : ''} ${d.answers[k] != null ? 'ans' : ''} ${d.flags.includes(k) ? 'flag' : ''}" data-go="${k}" aria-label="Question ${k + 1}">${k + 1}</button>`).join('')}</div><small class="muted">■ answered · 🚩 flagged</small></aside>
@@ -116,7 +116,7 @@ function mcqResults(view, d, qs, order, toFrq) {
     <table class="gb" style="margin:14px 0"><thead><tr><th>Unit</th><th>Correct</th><th>%</th></tr></thead><tbody>${Object.entries(r.byUnit).sort().map(([u, v]) => `<tr><td class="gb-name">${esc(UNIT[u].title)}</td><td>${v.c}/${v.n}</td><td class="${v.c / v.n >= 0.7 ? 'gb-ok' : v.c / v.n >= 0.5 ? 'gb-late' : 'gb-miss'}">${Math.round(v.c / v.n * 100)}%</td></tr>`).join('')}</tbody></table>
     ${toFrq ? `<p><b>Next: Section II.</b> You'll have 90 minutes for 4 free-response questions. Afterward, you'll grade yourself with the scoring rubrics.</p><div class="row" style="justify-content:center"><button class="btn primary lg" onclick="go('/exam/run')">Start Section II →</button></div>` : `<div class="row" style="justify-content:center"><a class="btn primary" href="#/exam">Back to exams</a><a class="btn" href="#/quiz?mode=review">Practice my mistakes</a></div><p class="muted"><small>*A rough estimate, not an official College Board conversion.</small></p>`}</div>
     <h3 style="margin-top:26px">Review answers</h3><div class="tabs"><button class="on" data-f="wrong">Missed (${r.total - r.correct})</button><button data-f="all">All ${r.total}</button></div><div id="rv"></div></div>`;
-  const drawRv = f => { $('#rv', view).innerHTML = qs.map((q, i) => ({ q, i })).filter(({ q, i }) => f === 'all' || d.answers[i] !== q.a).map(({ q, i }) => { const mine = d.answers[i]; const ok = mine === q.a; return `<div class="card" style="margin-bottom:10px"><small class="muted">Q${i + 1} · ${esc(UNIT[q.unit]?.title || '')}</small><div class="qtext" style="font-size:1rem">${fmt(q.q)}</div>${q.code ? codeBlock(q.code, q.lang, false) : ''}<p style="margin:6px 0">${ok ? '✅' : '❌'} Your answer: ${mine == null ? '<i>none</i>' : `<b>${'ABCDE'[order[i].indexOf(mine)]}</b>. ${fmt(q.choices[mine])}`}${ok ? '' : `<br>✔ Correct: <b>${'ABCDE'[order[i].indexOf(q.a)]}</b>. ${fmt(q.choices[q.a])}`}</p><div class="explain ${ok ? '' : 'no'}">${fmt(q.why)}</div></div>`; }).join('') || '<div class="empty">Perfect score! 🎉</div>'; };
+  const drawRv = f => { $('#rv', view).innerHTML = qs.map((q, i) => ({ q, i })).filter(({ q, i }) => f === 'all' || d.answers[i] !== q.a).map(({ q, i }) => { const mine = d.answers[i]; const ok = mine === q.a; return `<div class="card" style="margin-bottom:10px"><small class="muted">Q${i + 1} · ${esc(UNIT[q.unit]?.title || '')}</small><div class="qtext" style="font-size:1rem">${fmt(q.q)}</div>${qExtra(q)}<p style="margin:6px 0">${ok ? '✅' : '❌'} Your answer: ${mine == null ? '<i>none</i>' : `<b>${'ABCDE'[order[i].indexOf(mine)]}</b>. ${fmt(q.choices[mine])}`}${ok ? '' : `<br>✔ Correct: <b>${'ABCDE'[order[i].indexOf(q.a)]}</b>. ${fmt(q.choices[q.a])}`}</p><div class="explain ${ok ? '' : 'no'}">${fmt(q.why)}</div></div>`; }).join('') || '<div class="empty">Perfect score! 🎉</div>'; };
   $$('[data-f]', view).forEach(b => b.onclick = () => { $$('[data-f]', view).forEach(x => x.classList.toggle('on', x === b)); drawRv(b.dataset.f); });
   drawRv('wrong');
 }

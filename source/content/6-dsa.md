@@ -100,6 +100,60 @@ def has_pair_sum(nums, target):
 - [ ] O(1)
 WHY: The nested loops check about n²/2 pairs, and dropping the ½ gives O(n²). Using a set brings this down to O(n).
 
+### QUIZ
+Q: Consider the following function.
+PTS: 1
+```python
+def mystery(n):
+    count = 0
+    i = 1
+    while i < n:
+        i *= 2
+        count += 1
+    return count
+```
+ASK: Which of the following best describes the running time of `mystery(n)`?
+- [ ] O(1)
+- [x] O(log n)
+- [ ] O(n)
+- [ ] O(n²)
+WHY: i doubles every pass, so the loop runs about log₂ n times. For n = 1,000,000 that's only 20 passes.
+
+Q: Consider the following code segment.
+PTS: 1
+```python
+total = 0
+for i in range(n):
+    for j in range(i, n):
+        total += 1
+```
+ASK: What is the value of `total` when `n` is 5, and what is the Big-O running time?
+- [ ] 25, O(n²)
+- [x] 15, O(n²)
+- [ ] 15, O(n)
+- [ ] 10, O(n log n)
+WHY: The inner loop runs 5 + 4 + 3 + 2 + 1 = 15 times. In general that's n(n + 1)/2, which grows like n², so it's O(n²) even though it's about half of n².
+
+Q: Which of the following operations take O(1) time on a Python list of length n?
+PTS: 1
+OPT I: `lst[n // 2]`
+OPT II: `lst.append(x)` (on average)
+OPT III: `lst.insert(0, x)`
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: Lists are arrays, so jumping to an index is instant and adding at the end is usually instant. Inserting at the front shifts every item right, which is O(n).
+
+Q: Algorithm A takes 100n steps and algorithm B takes n² steps. Which statement is true?
+PTS: 1
+- [ ] A is always faster.
+- [ ] B is always faster.
+- [x] B is faster for n < 100, but A is faster for n > 100.
+- [ ] They are always the same speed.
+WHY: They're equal at n = 100. Below that, n² is smaller; above it, the O(n) algorithm wins. Big-O describes what happens for large inputs.
+
+
 ## UNIT ds2 | Linked Lists, Stacks & Queues
 
 ### LESSON Linked lists | 11
@@ -236,6 +290,72 @@ LINE: 4
 FIX: while cur is not None:
 WHY: Checking `cur.next` stops one node early and crashes when `cur` is None. Check `cur` itself.
 
+### QUIZ
+Q: Consider the following code segment, where `stack` is a Python list used as a stack.
+PTS: 1
+```python
+stack = []
+for x in [3, 1, 4, 1, 5]:
+    if x > 2:
+        stack.append(x)
+    elif stack:
+        stack.pop()
+print(stack)
+```
+ASK: What is printed as a result of executing the code segment?
+- [ ] [3, 4, 5]
+- [x] [5]
+- [ ] [3, 5]
+- [ ] []
+WHY: Push 3 → [3]. 1 pops → []. Push 4 → [4]. 1 pops → []. Push 5 → [5].
+
+Q: Which of the following use a queue (first in, first out)?
+PTS: 1
+OPT I: A printer printing jobs in the order they were sent
+OPT II: The "undo" button in a text editor
+OPT III: Breadth-first search of a graph
+- [ ] I only
+- [x] I and III only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: Undo reverses the **most recent** action first, so it's a stack. Printing in order and BFS both handle the oldest item first.
+
+Q: Consider the following linked list code.
+PTS: 1
+```python
+class Node:
+    def __init__(self, val, nxt=None):
+        self.val = val
+        self.next = nxt
+
+head = Node(1, Node(2, Node(3)))
+head.next = head.next.next
+node = head
+out = []
+while node:
+    out.append(node.val)
+    node = node.next
+print(out)
+```
+ASK: What is printed as a result of executing the code segment?
+- [ ] [1, 2, 3]
+- [x] [1, 3]
+- [ ] [2, 3]
+- [ ] [1]
+WHY: `head.next = head.next.next` makes node 1 point straight to node 3, which removes node 2 from the list.
+
+Q: Using the stack algorithm for matching brackets, which of the following strings are balanced?
+PTS: 1
+OPT I: `([]{})`
+OPT II: `([)]`
+OPT III: `((()`
+- [x] I only
+- [ ] I and II only
+- [ ] II only
+- [ ] I and III only
+WHY: In II, `)` arrives when the top of the stack is `[`, so they don't match. III ends with two `(` still on the stack.
+
+
 ## UNIT ds3 | Trees & Hash Tables
 
 ### LESSON Binary search trees | 12
@@ -353,6 +473,53 @@ def bst_search(node, target):
 LINE: 7, 8
 FIX: return bst_search(node.left, target)   # smaller values are on the LEFT
 WHY: The directions are swapped. Smaller targets should go **left** and larger targets should go **right**.
+
+### QUIZ
+Q: The values 50, 30, 70, 20, 40, 60 are inserted in that order into an empty binary search tree. What is printed by an **in-order** traversal?
+PTS: 1
+- [ ] 50 30 20 40 70 60
+- [x] 20 30 40 50 60 70
+- [ ] 20 40 30 60 70 50
+- [ ] 50 30 70 20 40 60
+WHY: An in-order traversal of a BST always visits the values in sorted order. The first choice is pre-order and the third is post-order.
+
+Q: Which of the following are true about a binary search tree with n nodes?
+PTS: 1
+OPT I: If the tree is balanced, searching takes O(log n) time.
+OPT II: If values are inserted already sorted, the tree becomes a long chain and searching takes O(n).
+OPT III: The smallest value is always the root.
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: The smallest value is the leftmost node, not the root. Inserting sorted data makes every new node a right child, so the tree turns into a linked list.
+
+Q: A hash table has 7 buckets and uses `hash(k) = k % 7`. The keys 10, 17, 3 and 24 are inserted using chaining. How many keys end up in bucket 3?
+PTS: 1
+- [ ] 1
+- [ ] 2
+- [ ] 3
+- [x] 4
+WHY: 10 % 7 = 3, 17 % 7 = 3, 3 % 7 = 3 and 24 % 7 = 3. All four collide, which shows why a good hash function spreads keys out.
+
+Q: Consider the following function.
+PTS: 1
+```python
+def has_pair(nums, target):
+    seen = set()
+    for n in nums:
+        if target - n in seen:
+            return True
+        seen.add(n)
+    return False
+```
+ASK: Which best describes the running time, assuming set operations take O(1) on average?
+- [ ] O(1)
+- [ ] O(log n)
+- [x] O(n)
+- [ ] O(n²)
+WHY: It visits each number once and does constant work per number. Checking every pair with two loops would be O(n²).
+
 
 ## UNIT ds4 | Sorting, Searching & Recursion
 
@@ -488,3 +655,284 @@ def binary_search(arr, target):
 LINE: 3
 FIX: while lo <= hi:
 WHY: When `lo == hi`, one item is still left to check. `<` skips it, so for example `binary_search([7], 7)` returns −1.
+
+### LESSON Quick sort and choosing a sort | 10 | Algorithms
+**Quick sort** picks a **pivot**, puts smaller values on its left and larger values on its right, then sorts each side the same way.
+
+```python run
+def quick_sort(lst):
+    if len(lst) <= 1:
+        return lst
+    pivot = lst[0]
+    smaller = [x for x in lst[1:] if x < pivot]
+    larger = [x for x in lst[1:] if x >= pivot]
+    return quick_sort(smaller) + [pivot] + quick_sort(larger)
+
+print(quick_sort([5, 2, 9, 1, 5, 6]))
+```
+
+- Average: **O(n log n)**, and usually the fastest in practice.
+- Worst case: **O(n²)**, when the pivot is always the smallest or largest value. With the first element as the pivot, already-sorted input causes this.
+- Picking a random pivot (or the middle of three values) makes the worst case very unlikely.
+
+### Which sort when?
+| Sort | Best | Average | Worst | Extra memory | Stable? |
+|---|---|---|---|---|---|
+| Selection | n² | n² | n² | O(1) | No |
+| Insertion | **n** | n² | n² | O(1) | Yes |
+| Merge | n log n | n log n | n log n | O(n) | Yes |
+| Quick | n log n | n log n | n² | O(log n) | No |
+
+Insertion sort is great for **nearly sorted** or tiny lists. Python's built-in `sorted()` uses Timsort, a mix of merge and insertion sort.
+
+### QUIZ
+Q: Consider the following recursive function.
+PTS: 1
+```python
+def f(n):
+    if n <= 1:
+        return 1
+    return f(n - 1) + f(n - 2)
+
+print(f(5))
+```
+ASK: What is printed as a result of executing the code segment?
+- [ ] 5
+- [x] 8
+- [ ] 13
+- [ ] 3
+WHY: f(0) = f(1) = 1, f(2) = 2, f(3) = 3, f(4) = 5 and f(5) = 8. Without memoization this makes O(2ⁿ) calls.
+
+Q: The list `[4, 1, 3, 2]` is sorted with selection sort, which swaps the smallest remaining value into place on each pass. What does the list look like after the **first two** passes?
+PTS: 1
+- [ ] [1, 4, 3, 2]
+- [x] [1, 2, 3, 4]
+- [ ] [1, 3, 4, 2]
+- [ ] [1, 2, 4, 3]
+WHY: Pass 1 swaps 1 to the front: [1, 4, 3, 2]. Pass 2 finds 2 and swaps it with 4: [1, 2, 3, 4]. It happens to be sorted already, but selection sort would still do one more pass to check.
+
+Q: Which sorting algorithms run in O(n) time when the input is already sorted?
+PTS: 1
+OPT I: Insertion sort
+OPT II: Selection sort
+OPT III: Merge sort
+- [x] I only
+- [ ] I and III only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: Insertion sort only compares each item to the one before it when nothing needs to move. Selection sort still scans everything, and merge sort still splits and merges, O(n log n).
+
+Q: Consider the following function, which is intended to return the index of `target` in the sorted list `lst`, or -1 if it isn't there.
+PTS: 1
+```python
+def search(lst, target):
+    lo, hi = 0, len(lst) - 1
+    while /* missing code */:
+        mid = (lo + hi) // 2
+        if lst[mid] == target:
+            return mid
+        elif lst[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1
+```
+ASK: Which of the following can replace `/* missing code */` so the function works as intended?
+- [ ] `lo < hi`
+- [x] `lo <= hi`
+- [ ] `lo != hi`
+- [ ] `mid < hi`
+WHY: When lo and hi are equal there is still one item left to check. With `lo < hi`, `search([7], 7)` would never check index 0 and would return -1.
+
+## UNIT ds5 | Heaps & Priority Queues
+### LESSON Binary heaps | 11 | Data structures
+A **priority queue** always gives you the item with the highest priority (or the smallest value) next, not the oldest. The usual way to build one is a **binary heap**.
+
+A **min-heap** is a complete binary tree where every parent is **≤** its children. So the smallest value is always at the root.
+
+### Stored in a list
+A heap fits neatly in a list with no gaps. For the item at index `i`:
+- left child is at `2i + 1`
+- right child is at `2i + 2`
+- parent is at `(i - 1) // 2`
+
+```text
+        1              index:  0  1  2  3  4  5
+      /   \            value: [1, 3, 2, 7, 4, 5]
+     3     2
+    / \   /
+   7   4 5
+```
+
+### Operations
+- **Push:** put the new item at the end, then **sift up** (swap with its parent while it's smaller). O(log n).
+- **Pop:** take the root, move the last item to the root, then **sift down** (swap with the smaller child). O(log n).
+- **Peek:** look at the root. O(1).
+
+### Python's heapq
+```python run
+import heapq
+h = []
+for x in [5, 1, 8, 3, 2]:
+    heapq.heappush(h, x)
+print(h[0])                          # 1, the smallest
+print([heapq.heappop(h) for _ in range(3)])   # [1, 2, 3]
+print(heapq.nlargest(2, [5, 1, 8, 3]))         # [8, 5]
+```
+
+Uses: scheduling the next task, finding the k largest items, merging sorted lists, and Dijkstra's shortest-path algorithm. **Heap sort** pushes everything and pops it all back out in O(n log n).
+
+### QUIZ
+Q: A min-heap is stored in the list `[2, 5, 3, 9, 6, 8]`. What are the children of the value 5?
+PTS: 1
+- [ ] 3 and 9
+- [x] 9 and 6
+- [ ] 6 and 8
+- [ ] 2 and 3
+WHY: 5 is at index 1. Its children are at 2(1) + 1 = 3 and 2(1) + 2 = 4, which hold 9 and 6.
+
+Q: Consider the following code segment.
+PTS: 1
+```python
+import heapq
+h = [4, 7, 9]
+heapq.heappush(h, 1)
+heapq.heappush(h, 6)
+heapq.heappop(h)
+print(h[0])
+```
+ASK: What is printed as a result of executing the code segment?
+- [ ] 1
+- [x] 4
+- [ ] 6
+- [ ] 9
+WHY: After pushing, the smallest is 1. Popping removes it, so the new smallest value, 4, is at the root.
+
+Q: Which of the following are true about a binary min-heap with n items?
+PTS: 1
+OPT I: The smallest item can be found in O(1) time.
+OPT II: Searching for an arbitrary value takes O(log n) time.
+OPT III: Removing the smallest item takes O(log n) time.
+- [ ] I only
+- [x] I and III only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: A heap only promises parent ≤ child, not left < right like a BST. To find an arbitrary value you might have to check every node, which is O(n).
+
+Q: A program needs to repeatedly find and remove the task with the earliest deadline while new tasks keep arriving. Which data structure is the best fit?
+- [ ] A stack
+- [ ] An unsorted list
+- [x] A min-heap keyed on deadline
+- [ ] A queue
+WHY: The heap gives O(log n) push and pop of the minimum. An unsorted list would need an O(n) scan every time.
+
+## UNIT ds6 | Graphs
+### LESSON Representing graphs | 10 | Data structures
+A **graph** is a set of **vertices** (nodes) joined by **edges**. Maps, social networks and web links are all graphs.
+- **Directed** edges go one way (A follows B). **Undirected** edges go both ways (A is friends with B).
+- **Weighted** edges have a cost, like distance or time.
+
+### Adjacency list vs. matrix
+```python run
+# Adjacency list: each vertex maps to its neighbors
+graph = {
+    "A": ["B", "C"],
+    "B": ["D"],
+    "C": ["D"],
+    "D": [],
+}
+print(graph["A"])
+```
+
+| | Adjacency list | Adjacency matrix |
+|---|---|---|
+| Memory | O(V + E) | O(V²) |
+| "Is there an edge A→B?" | O(degree) | O(1) |
+| Best for | Sparse graphs (most real ones) | Dense graphs |
+
+### LESSON BFS, DFS and shortest paths | 13 | Algorithms
+### Breadth-first search (BFS)
+BFS explores **level by level** using a **queue**. In an unweighted graph it finds the path with the **fewest edges**.
+
+```python run
+from collections import deque
+
+def bfs(graph, start):
+    seen = {start}
+    order = []
+    q = deque([start])
+    while q:
+        v = q.popleft()
+        order.append(v)
+        for n in graph[v]:
+            if n not in seen:
+                seen.add(n)
+                q.append(n)
+    return order
+
+g = {"A": ["B", "C"], "B": ["D"], "C": ["D", "E"], "D": [], "E": []}
+print(bfs(g, "A"))    # ['A', 'B', 'C', 'D', 'E']
+```
+
+### Depth-first search (DFS)
+DFS goes as **deep** as it can before backing up. It uses a **stack** or recursion. It's good for detecting cycles, solving mazes and finding connected pieces.
+
+```python run
+def dfs(graph, v, seen=None):
+    if seen is None:
+        seen = []
+    seen.append(v)
+    for n in graph[v]:
+        if n not in seen:
+            dfs(graph, n, seen)
+    return seen
+
+g = {"A": ["B", "C"], "B": ["D"], "C": ["D", "E"], "D": [], "E": []}
+print(dfs(g, "A"))    # ['A', 'B', 'D', 'C', 'E']
+```
+
+Both BFS and DFS run in **O(V + E)** time.
+
+### Dijkstra's algorithm
+For **weighted** graphs with no negative edges, **Dijkstra's algorithm** finds the cheapest path. It keeps a min-heap of (distance, vertex) and always expands the closest unvisited vertex next. Time: O((V + E) log V). Maps apps use ideas like this.
+
+### QUIZ
+Q: Consider the following directed graph, stored as an adjacency list.
+PTS: 1
+```python
+g = {"S": ["A", "B"], "A": ["C"], "B": ["C", "D"], "C": ["E"], "D": ["E"], "E": []}
+```
+ASK: Which of the following is the order vertices are visited by BFS starting at "S", visiting neighbors in the order listed?
+- [x] S A B C D E
+- [ ] S A C E B D
+- [ ] S B D E A C
+- [ ] S A B C E D
+WHY: BFS visits all of S's neighbors (A, B) first, then their unvisited neighbors (C from A, D from B), then E. S A C E B D is the DFS order.
+
+Q: Which of the following statements about BFS and DFS are true?
+PTS: 1
+OPT I: BFS uses a queue and DFS uses a stack (or recursion).
+OPT II: In an unweighted graph, BFS finds a path with the fewest edges.
+OPT III: DFS always finds the shortest path in a weighted graph.
+- [ ] I only
+- [x] I and II only
+- [ ] II and III only
+- [ ] I, II and III
+WHY: DFS may wander down a long path first, so it doesn't guarantee the shortest path. Weighted shortest paths need an algorithm like Dijkstra's.
+
+Q: A graph has 1,000 vertices, and each vertex has about 4 edges. Which representation uses less memory?
+PTS: 1
+- [x] An adjacency list
+- [ ] An adjacency matrix
+- [ ] They use the same amount of memory.
+- [ ] Neither can store this graph.
+WHY: A matrix always needs 1,000 × 1,000 = 1,000,000 cells. The list stores only about 4,000 edges.
+
+Q: An undirected weighted graph has these edges: A–B costs 1, B–D costs 1, A–C costs 4, C–D costs 1 and B–C costs 5. What is the cost of the cheapest path from A to D?
+PTS: 1
+- [x] 2
+- [ ] 5
+- [ ] 3
+- [ ] 6
+WHY: A → B → D costs 1 + 1 = 2. A → C → D costs 4 + 1 = 5. Dijkstra's algorithm would settle B first (distance 1) and then reach D at distance 2.
+

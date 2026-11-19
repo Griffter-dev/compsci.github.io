@@ -14,24 +14,31 @@ function parseQuestions(lines, type, unitId) {
   for (const raw of lines) {
     const line = raw.replace(/\s+$/, '');
     if (inFence) {
-      if (/^```/.test(line)) { inFence = false; q.code = code.join('\n'); code = []; }
+      if (/^```/.test(line)) { inFence = false; const opt = q.opts && q.opts[q.opts.length - 1]; if (q._optFence && opt) { opt.code = code.join('\n'); opt.lang = q._lang; q._optFence = false; } else q.code = code.join('\n'); code = []; }
       else code.push(raw);
       continue;
     }
     let m;
     if ((m = line.match(/^Q:\s*(.*)$/))) { push(); q = { q: m[1], choices: [], a: -1 }; continue; }
     if (!q) continue;
-    if ((m = line.match(/^```(\w*)/))) { inFence = true; q.lang = m[1] || 'text'; continue; }
+    if ((m = line.match(/^```(\w*)/))) { inFence = true; if (q._optFence) q._lang = m[1] || 'text'; else q.lang = m[1] || 'text'; continue; }
+    if ((m = line.match(/^PTS:\s*(\d+)/))) { q.pts = +m[1]; q.sheet = true; continue; }
+    if ((m = line.match(/^ASK:\s*(.*)$/))) { q.ask = m[1]; q.sheet = true; continue; }
+    if ((m = line.match(/^OPT\s+([IVX]+)[.:]\s*(.*)$/))) { (q.opts = q.opts || []).push({ n: m[1], text: m[2] }); q._optFence = !m[2]; q.sheet = true; continue; }
+    if (line === 'TABLE:') { q.table = []; q.sheet = true; continue; }
+    if (q.table && !q.choices.length && /^\|.*\|$/.test(line)) { if (!/^\|[\s:|-]+\|$/.test(line)) q.table.push(line.slice(1, -1).split('|').map(c => c.trim())); continue; }
     if ((m = line.match(/^- \[( |x)\] (.*)$/))) { if (m[1] === 'x') q.a = q.choices.length; q.choices.push(m[2]); continue; }
     if ((m = line.match(/^WHY:\s*(.*)$/))) { q.why = m[1]; continue; }
     if ((m = line.match(/^LINE:\s*(.*)$/))) { q.lines = m[1].split(',').map(s => parseInt(s.trim(), 10)); continue; }
     if ((m = line.match(/^FIX:\s*(.*)$/))) { q.fix = m[1]; continue; }
-    if (line.trim() && !q.code && !q.choices.length && !q.why) q.q += ' ' + line.trim();
+    if (line.trim() && !q.code && !q.choices.length && !q.why && !q.sheet) q.q += ' ' + line.trim();
   }
   push();
   out.forEach((x, i) => {
     x.id = `${unitId}-${type[0]}${i + 1}`;
     x.kind = type === 'bug' ? 'bug' : type === 'fill' ? 'fill' : 'mcq';
+    delete x._optFence; delete x._lang;
+    if (x.sheet) { x.pts = x.pts || 1; if (x.opts && x.opts.some(o => !o.text && !o.code)) errors.push(`${x.id}: empty OPT`); }
     if (type === 'fill') { delete x.choices; delete x.a; if (!x.why) errors.push(`${x.id}: missing WHY`); return; }
     x.type = type;
     if (type === 'bug') {
@@ -89,7 +96,7 @@ function parseCourse(text, file) {
       const topic = (section.title.match(/^(\d+\.\d+)\s/) || [])[1] || '';
       unit.lessons.push({ title: section.title, mins: section.mins, skills: section.skills || [], topic, html: marked.parse(prepMd(md)), text, quizzes });
     } else {
-      unit[section.type].push(...parseQuestions(buf, section.type, unit.id + (unit[section.type].length ? 'x' : '')));
+      { unit._sec = unit._sec || {}; const n = unit._sec[section.type] = (unit._sec[section.type] || 0) + 1; unit[section.type].push(...parseQuestions(buf, section.type, unit.id + (n === 1 ? '' : n === 2 ? 'x' : 'x' + n))); }
     }
     buf = []; section = null;
   };
@@ -162,6 +169,7 @@ const courses = files.map(f => parseCourse(fs.readFileSync(path.join(ROOT, 'cont
 let nL = 0, nQ = 0, nT = 0, nB = 0, nU = 0, nE = 0, nF = 0;
 for (const c of courses) for (const u of c.units) { nU++; nL += u.lessons.length; nQ += u.quiz.length; nT += u.trace.length; nB += u.bug.length; nE += u.ex.length; nF += u.fill.length; }
 console.log(`courses ${courses.length}, units ${nU}, lessons ${nL}, quiz ${nQ}, trace ${nT}, bug ${nB}, exercises ${nE}, fill ${nF}`);
+courses.forEach(c => c.units.forEach(u => delete u._sec));
 if (process.env.DUMP_EX) fs.writeFileSync(process.env.DUMP_EX, JSON.stringify(courses.flatMap(c => c.units.flatMap(u => u.ex))));
 if (errors.length) { console.error('CONTENT ERRORS:\n' + errors.join('\n')); process.exit(1); }
 

@@ -472,3 +472,16 @@ dl.gloss{display:grid;gap:10px;margin:0}
 
 .navlinks .ni{display:none}
 @media (max-width:1240px){.navlinks .nl{display:none}.navlinks .ni{display:inline;font-size:1.15rem}.navlinks a{padding:6px 9px}.navlinks a .tag{display:none}}
+/* AP quiz-sheet style questions */
+.qpts{float:right;font-size:.82rem;color:var(--muted);font-weight:400;margin-left:10px}
+.qask{font-style:italic;margin:12px 0 6px}
+.qopts{display:grid;gap:8px;margin:8px 0 12px}
+.qopt{display:flex;gap:10px;align-items:flex-start}
+.qopt-n{font-family:var(--mono);min-width:2.2em;padding-top:4px}
+.qopt pre{margin:0}
+.qtable-wrap{overflow-x:auto;margin:10px 0}
+.qtable{border-collapse:collapse;font-family:var(--mono);font-size:.88rem}
+.qtable th,.qtable td{border:1px solid var(--border);padding:5px 12px;text-align:left}
+.qtable th{background:var(--bg2)}
+.choices.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:560px){.choices.grid2{grid-template-columns:1fr}}
