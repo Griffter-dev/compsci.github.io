@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CompSci-Study · CS, all four years</title>
-<meta name="description" content="CompSci-Study: a free study app for high school computer science. Covers Intro Python, Web Dev, AP CSP, AP CSA, Cybersecurity and Data Structures, with quizzes, code challenges, games and squads.">
+<title>CompciStudy · CS, all four years</title>
+<meta name="description" content="CompciStudy: a free study app for high school computer science. Covers Intro Python, Web Dev, AP CSP, AP CSA, Cybersecurity and Data Structures, with quizzes, code challenges, games and squads.">
 <meta name="theme-color" content="#050407">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050407'/%3E%3Ctext x='32' y='42' font-family='monospace' font-size='28' font-weight='700' text-anchor='middle' fill='%2339ff88'%3E%3E_%3C/text%3E%3C/svg%3E">
@@ -457,6 +457,32 @@ dl.gloss{display:grid;gap:10px;margin:0}
 
 .frq>*,.exam-grid>*,.exam>*{min-width:0}
 .frq .prose table{display:block;overflow-x:auto}
+.fb-tab{position:fixed;right:0;top:50%;transform:translateY(-50%) rotate(-90deg);transform-origin:bottom right;z-index:29;background:var(--accent);color:var(--on-accent);font-weight:800;font-size:.85rem;padding:7px 14px;border-radius:10px 10px 0 0;text-decoration:none;box-shadow:var(--shadow);white-space:nowrap;translate:0 -50%}
+.fb-tab:hover{filter:brightness(1.1)}
+@media (max-width:820px){.fb-tab{display:none}}
+.fb-type:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--bg2))}
+.fb-item.done{opacity:.6}
+/* search + nav tweaks */
+.search-btn{cursor:pointer;color:var(--fg);font-family:var(--font)}
+.search-btn:hover{border-color:var(--accent2)}
+.search-btn kbd{font-family:var(--mono);font-size:.7rem;border:1px solid var(--border);border-radius:4px;padding:0 5px;color:var(--muted)}
+@media (max-width:1100px){.search-btn kbd,.search-btn .search-lbl{display:none}}
+.navlinks{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{white-space:nowrap}
+@media (max-width:1380px){.navlinks a{padding:7px 8px;font-size:.88rem}.topright .chip.xp{display:none}}
+.modal.search-modal{align-self:start;margin-top:8vh;padding:16px}
+.search-box #sq{font-size:1.1rem;padding:13px 14px;margin-bottom:10px}
+.search-results{max-height:60vh;overflow:auto;margin-bottom:8px}
+.sr-item{display:flex;gap:12px;align-items:center;padding:9px 10px;border-radius:9px;color:var(--fg);text-decoration:none}
+.sr-item small{display:block;color:var(--muted);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-item:hover,.sr-item.sel{background:color-mix(in srgb,var(--accent2) 14%,transparent)}
+.sr-ic{font-size:1.3rem;width:1.6em;text-align:center;flex:none}
+.sr-item mark{background:color-mix(in srgb,var(--warn) 40%,transparent);color:inherit;border-radius:3px}
+.ap-strip{border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+
+.navlinks .ni{display:none}
+@media (max-width:1240px){.navlinks .nl{display:none}.navlinks .ni{display:inline;font-size:1.15rem}.navlinks a{padding:6px 9px}.navlinks a .tag{display:none}}
 
 </style>
 </head>
@@ -693,6 +719,25 @@ function nextInCourse(c) {
   for (const u of unitsFromStart(c)) { const it = unitItems(u).find(x => !itemDoneAt(x)); if (it) return { c, u, it }; }
   return null;
 }
+/* ---------- "Reached" scope: games & practice only use modules you've reached ----------
+   A module counts as reached if you've finished anything in it, it's the module you're on now,
+   or it comes before the furthest module you've reached (including the module you chose to start on). */
+function reachedUnits(c) {
+  const started = c.units.findIndex(u => u.id === S.start[c.id]);
+  let max = Math.max(started, ...c.units.map((u, i) => unitItems(u).some(itemDoneAt) || S.units[u.id]?.quizAt || S.units[u.id]?.boss ? i : -1));
+  if (max < 0) return [];
+  const nx = nextInCourse(c); if (nx) max = Math.max(max, c.units.indexOf(nx.u));
+  return c.units.slice(0, max + 1).map(u => u.id);
+}
+function reachedSet() {
+  const ids = COURSES.flatMap(reachedUnits);
+  if (!ids.length) { const c = COURSE[myCourseIds()[0]] || COURSES[0]; ids.push((c.units.find(u => u.id === S.start[c.id]) || c.units[0]).id); }  // brand new: the module you're on
+  return new Set(ids);
+}
+const isReached = uid => reachedSet().has(uid);
+const scopeQs = qs => { const r = reachedSet(); return qs.filter(q => r.has(q.unit)); };
+function lockedNote(what = 'any course') { return `<div class="wrap narrow"><div class="card empty"><span class="big">🔒</span><h2>Nothing to play here yet</h2><p>Games and practice only use lessons you've reached, so you won't get questions on things you haven't learned. Finish a lesson in ${esc(what)} to unlock questions.</p><a class="btn primary" href="${continueTarget().href}">Continue learning →</a></div></div>`; }
+
 function continueTarget() {
   const recent = [...Object.entries(S.lessons).map(([k, t]) => [UNIT[k.split(':')[0]]?.course, t]), ...Object.entries(S.exercises).map(([k, v]) => [EX[k]?.course, v.at]), ...Object.entries(S.fills).map(([k, v]) => [Q[k]?.course, v.at])].filter(x => x[0]).sort((a, b) => b[1] - a[1]);
   const order = [...new Set([...(recent.length ? [recent[0][0]] : []), ...Object.keys(S.start).filter(id => COURSE[id]), ...myCourseIds()])];
@@ -899,29 +944,42 @@ window.addEventListener('hashchange', render);
 
 /* ---------- Chrome: top bar + mobile tab bar ---------- */
 const NAV = [['/', 'Home', '🏠'], ['/courses', 'Courses', '📚'], ['/assignments', 'Assigned', '📋'], ['/arcade', 'Arcade', '🕹️'], ['/squad', 'Squad', '👥']];
-const DESK_NAV = [['/courses', 'Courses'], ['/practice', 'Practice'], ['/assignments', 'Assignments'], ['/arcade', 'Arcade'], ['/squad', 'Squad'], ['/notes', 'Notes']];
+const DESK_NAV = [['/courses', 'Courses', '📚'], ['/practice', 'Practice', '🎯'], ['/exam', 'AP Exam & FRQs', '📝'], ['/assignments', 'Assignments', '📋'], ['/arcade', 'Arcade', '🕹️'], ['/squad', 'Squad', '👥'], ['/notes', 'Notes', '🗒️'], ['/feedback', 'Feedback', '💬']];
 function renderChrome() {
   const p = (location.hash.slice(1) || '/').split('?')[0];
-  const active = href => href === '/' ? p === '/' : p.startsWith(href) || (href === '/courses' && (p.startsWith('/course') || p.startsWith('/learn') || p.startsWith('/ex/') || p.startsWith('/unit-done')));
+  const active = href => href === '/exam' ? (p.startsWith('/exam') || p.startsWith('/frq')) : href === '/' ? p === '/' : p.startsWith(href) || (href === '/courses' && (p.startsWith('/course') || p.startsWith('/learn') || p.startsWith('/ex/') || p.startsWith('/unit-done')));
   const due = typeof dueBadgeCount === 'function' ? dueBadgeCount() : 0;
   const tag = h => h === '/arcade' ? '<span class="tag">2×</span>' : h === '/assignments' && due ? `<span class="tag due">${due}</span>` : '';
   const st = streakAlive(), L = levelFor(S.xp);
   $('#topbar').innerHTML = `
-    <a class="logo" href="#/" aria-label="CompSci-Study home"><span class="mark">&gt;_</span><span>CompSci-<b>Study</b></span></a>
-    <nav class="navlinks" aria-label="Main">${DESK_NAV.map(([h, n]) => `<a href="#${h}" class="${active(h) ? 'on' : ''}">${n}${tag(h)}</a>`).join('')}</nav>
+    <a class="logo" href="#/" aria-label="CompciStudy home"><span class="mark">&gt;_</span><span>Compci<b>Study</b></span></a>
+    <nav class="navlinks" aria-label="Main">${DESK_NAV.map(([h, n, i]) => `<a href="#${h === '/feedback' ? '/feedback?from=' + encodeURIComponent(pageLabel()) : h}" class="${active(h) ? 'on' : ''}" title="${n}"><span class="ni" aria-hidden="true">${i}</span><span class="nl">${n}</span>${tag(h)}</a>`).join('')}</nav>
     <div class="topright">
+      <button class="chip search-btn" id="search-btn" aria-label="Search lessons, practices and units (shortcut: /)" title="Search  ( / )">🔍 <span class="search-lbl">Search</span><kbd>/</kbd></button>
       <span class="chip" title="Day streak">🔥 ${st}</span>
       <span class="chip xp" title="Level ${L}">⭐ ${fmtNum(S.xp)} XP · L${L}</span>
       <button class="iconbtn" id="me-btn" aria-label="Open profile menu" aria-haspopup="true">${avatarHtml(S.profile)}</button>
     </div>`;
   $('#tabbar').innerHTML = NAV.map(([h, n, i]) => `<a href="#${h}" class="${active(h) ? 'on' : ''}"><span class="i">${i}${h === '/assignments' && due ? `<span class="tbadge">${due}</span>` : ''}</span>${n}</a>`).join('');
   $('#me-btn').onclick = e => { e.stopPropagation(); toggleMenu(); };
+  $('#search-btn').onclick = e => { e.stopPropagation(); openSearch(); };
+}
+// a friendly name for the current page (sent along with feedback)
+function pageLabel() {
+  const p = (location.hash.slice(1) || '/').split('?')[0].split('/').filter(Boolean);
+  try {
+    if (p[0] === 'learn' && UNIT[p[1]]) { const u = UNIT[p[1]]; return `${COURSE[u.course].title} › ${u.lessons[+p[2]]?.title || u.title}`; }
+    if (p[0] === 'ex') { const it = EX[p[1]] || Q[p[1]]; return it ? `${COURSE[it.course].title} › ${it.title}` : ''; }
+    if (p[0] === 'course' && COURSE[p[1]]) return COURSE[p[1]].title;
+    if (p[0] === 'frq') return 'FRQ practice' + (p[1] ? ' › ' + ((window.FRQS || []).find(f => f.id === p[1])?.title || '') : '');
+    return p[0] ? p[0][0].toUpperCase() + p[0].slice(1) : 'Home';
+  } catch (e) { return ''; }
 }
 function toggleMenu() {
   const ex = $('.menu'); if (ex) { ex.remove(); return; }
   const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'menu');
   m.innerHTML = `<div style="padding:8px 12px"><b>${esc(S.profile.name || 'Student')}</b><br><small>${esc(myTitle())} · Level ${levelFor(S.xp)}</small></div><hr>
-    <a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/notes" role="menuitem">📝 Notes & cheat sheets</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>`;
+    <a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/exam" role="menuitem">📝 AP Exam & FRQs</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/notes" role="menuitem">📝 Notes & cheat sheets</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/feedback?from=${encodeURIComponent(pageLabel())}" role="menuitem">💬 Feedback</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>`;
   document.body.appendChild(m);
   $('a', m).focus();
   const off = e => { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('click', off); } };
@@ -929,9 +987,83 @@ function toggleMenu() {
   m.addEventListener('click', e => { if (e.target.closest('a')) m.remove(); });
 }
 function footer() {
-  return `<footer class="footer"><div class="cols"><div><b class="mono">CompSci-<span style="color:var(--accent)">Study</span></b><br>Made by students, for students. Free forever.</div>
-  <div><a href="#/courses">Courses</a><a href="#/assignments">Assignments</a><a href="#/arcade">Arcade</a><a href="#/squad">Squad</a><a href="#/notes">Notes</a><a href="#/glossary">Glossary</a><a href="#/help">Help & FAQ</a><a href="#/settings">Settings</a></div></div></footer>`;
+  return `<footer class="footer"><div class="cols"><div><b class="mono">Compci<span style="color:var(--accent)">Study</span></b><br>Made by students, for students. Free forever.</div>
+  <div><a href="#/courses">Courses</a><a href="#/assignments">Assignments</a><a href="#/arcade">Arcade</a><a href="#/squad">Squad</a><a href="#/notes">Notes</a><a href="#/glossary">Glossary</a><a href="#/feedback">Feedback</a><a href="#/help">Help & FAQ</a><a href="#/settings">Settings</a></div></div></footer>`;
 }
+
+/* ---------- Search (button left of the streak counter, or press / or Ctrl+K) ---------- */
+let SEARCH_INDEX = null;
+function buildSearchIndex() {
+  const idx = [];
+  const add = (kind, icon, title, sub, href, text = '', boost = 0) => idx.push({ kind, icon, title, sub, href, t: title.toLowerCase(), s: (sub + ' ' + text).toLowerCase(), boost });
+  for (const c of COURSES) {
+    add('Course', c.emoji, c.title, `${c.short} · ${c.yearLabel}`, `#/course/${c.id}`, c.blurb, 3);
+    c.units.forEach((u, ui) => {
+      add('Unit', '📦', u.title, `${c.title} · Module ${ui + 1}${u.weight ? ' · AP ' + u.weight : ''}`, `#/course/${c.id}`, u.lessons.map(l => l.title).join(' '), 2);
+      u.lessons.forEach((l, li) => add('Lesson', '📖', l.title, `${c.title} › ${u.title}`, `#/learn/${u.id}/${li}`, l.text.slice(0, 1500), 1));
+      u.ex.forEach(e => add('Coding practice', '💻', e.title, `${c.title} › ${u.title}`, `#/ex/${e.id}`, e.prompt.replace(/<[^>]+>/g, ' '), 1));
+      u.fill.forEach(f => add('Fill in the code', '🧩', f.title || 'Fill in the code', `${c.title} › ${u.title}`, `#/ex/${f.id}`, f.q, 0));
+      add('Unit quiz', '📝', `${u.title}: unit quiz`, c.title, `#/quiz?mode=unit&units=${u.id}&types=quiz`, 'quiz test practice', 0);
+      if (S.settings.bosses) add('Boss battle', '👹', `${(BOSSES[u.id] || ['Unit boss'])[0]} (boss)`, `${c.title} › ${u.title}`, `#/boss/${u.id}`, 'boss battle fight', -1);
+    });
+  }
+  for (const f of (window.FRQS || [])) add('FRQ', '✍️', `FRQ: ${f.title}`, `AP CSA · Q${f.q} ${FRQ_TYPES[f.q]}`, `#/frq/${f.id}`, 'free response frq ' + f.scenario.replace(/<[^>]+>/g, ' ').slice(0, 600), 2);
+  [['📝', 'AP CSA practice exams', 'Full exam, Section I, mini exam, unit tests', '#/exam', 'ap exam practice test mcq'],
+   ['✍️', 'FRQ practice', 'All AP CSA free-response questions', '#/frq', 'frq free response'],
+   ['🎯', 'Practice', 'Build a practice set, daily mix, review mistakes', '#/practice', 'quiz practice review'],
+   ['🔄', 'Review my mistakes', 'Retry questions you missed', '#/quiz?mode=review', 'mistakes review'],
+   ['🕹️', 'Arcade', 'Bug Hunt, Speed Round, Duels, Weekly challenge', '#/arcade', 'games bug hunt speed duel'],
+   ['⚔️', '1v1 Duels', 'Duel ByteBot or a squadmate', '#/duel', 'duel versus'],
+   ['📋', 'Assignments', 'Your plan and squad assignments', '#/assignments', 'homework due'],
+   ['👥', 'Squad', 'Leaderboard, duels, question bank', '#/squad', 'friends leaderboard'],
+   ['📝', 'Notes & cheat sheets', 'Search and print notes', '#/notes', 'notes cheat sheet print'],
+   ['📖', 'Glossary', 'Every CS term in plain English', '#/glossary', 'glossary words definitions'],
+   ['💬', 'Feedback', 'Send a suggestion or report a problem', '#/feedback', 'feedback suggestion bug'],
+   ['🎨', 'Settings', 'Themes, colors, fonts, sound', '#/settings', 'theme customize settings'],
+   ['👤', 'Profile & badges', 'Level, badges, stats', '#/profile', 'profile badges'],
+  ].forEach(([i, t, s, h, x]) => add('Page', i, t, s, h, x, 1));
+  for (const g of (window.GLOSSARY || [])) add('Glossary', '🔤', g.term, g.def, `#/glossary?q=${encodeURIComponent(g.term)}`, g.aliases.join(' '), -1);
+  return idx;
+}
+function searchIndex(q) {
+  SEARCH_INDEX = SEARCH_INDEX || buildSearchIndex();
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean); if (!terms.length) return [];
+  const out = [];
+  for (const it of SEARCH_INDEX) {
+    let score = 0, ok = true;
+    for (const t of terms) {
+      if (it.t.includes(t)) score += it.t.startsWith(t) || it.t.includes(' ' + t) ? 12 : 8;
+      else if (it.s.includes(t)) score += 2;
+      else { ok = false; break; }
+    }
+    if (ok) { if (it.t === q.toLowerCase()) score += 20; out.push([score + it.boost, it]); }
+  }
+  return out.sort((a, b) => b[0] - a[0]).slice(0, 40).map(x => x[1]);
+}
+function openSearch(initial = '') {
+  const m = modal(`<div class="search-box"><input class="input" id="sq" type="search" placeholder="Search lessons, practices, units, FRQs, glossary…" value="${esc(initial)}" autocomplete="off" aria-label="Search" autofocus><div id="sr" class="search-results" role="listbox"></div><small class="muted">↑ ↓ to move · Enter to open · Esc to close</small></div>`, { wide: true });
+  m.classList.add('search-modal');
+  const inp = $('#sq', m), box = $('#sr', m); let sel = 0, res = [];
+  const hl = s => { let h = esc(s); for (const t of inp.value.trim().split(/\s+/).filter(Boolean)) h = h.replace(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), x => `<mark>${x}</mark>`); return h; };
+  const draw = () => {
+    const q = inp.value.trim();
+    res = q ? searchIndex(q) : [];
+    if (!q) { const ct = continueTarget(); box.innerHTML = `<div class="muted" style="padding:10px 4px">Try <b>if statements</b>, <b>ArrayList</b>, <b>binary search</b>, <b>FRQ</b> or <b>2D array</b>.</div><a class="sr-item" href="${ct.href}"><span class="sr-ic">▶</span><span><b>Continue: ${esc(ct.label)}</b><small>${esc(ct.c.title)}</small></span></a>`; return; }
+    sel = Math.min(sel, Math.max(0, res.length - 1));
+    box.innerHTML = res.length ? res.map((r, i) => `<a class="sr-item ${i === sel ? 'sel' : ''}" href="${r.href}" role="option" aria-selected="${i === sel}" data-i="${i}"><span class="sr-ic">${r.icon}</span><span style="min-width:0"><b>${hl(r.title)}</b><small>${esc(r.kind)} · ${esc(r.sub.slice(0, 90))}</small></span></a>`).join('') : `<div class="empty">No results for "${esc(q)}".</div>`;
+    $$('.sr-item', box).forEach(a => a.addEventListener('click', () => closeModal()));
+  };
+  inp.oninput = () => { sel = 0; draw(); };
+  inp.onkeydown = e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + res.length) % Math.max(1, res.length); draw(); $('.sr-item.sel', box)?.scrollIntoView({ block: 'nearest' }); }
+    if (e.key === 'Enter') { const r = res[sel]; if (r) { closeModal(); location.hash = r.href.slice(1); } }
+  };
+  draw(); setTimeout(() => inp.focus(), 40);
+}
+document.addEventListener('keydown', e => {
+  if ($('.modal')) return;
+  if ((e.key === '/' && !e.target.matches('input,textarea,select,[contenteditable]')) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) { e.preventDefault(); openSearch(); }
+});
 
 // ---- glossary.js ----
 /* ================= Glossary: clickable terms in lessons + glossary page ================= */
@@ -1334,7 +1466,7 @@ route('/', (view) => {
   <div class="wrap">
     <section class="hero grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:center;gap:40px">
       <div>
-        <span class="eyebrow">$ compsci-study --years 9-12</span>
+        <span class="eyebrow">$ compcistudy --years 9-12</span>
         <h1>${S.profile.name ? `Hey ${esc(S.profile.name)}.<br>` : ''}Computer science, <span class="hl">all four years.</span></h1>
         <p class="lead">Notes, practice quizzes, code challenges and arcade games for Intro Python, Web Dev, AP CSP, AP CSA, Cybersecurity and Data Structures. Study solo or battle your squad.</p>
         <div class="cta">${ct.fresh ? `<button class="btn primary lg" onclick="startPicker('${ct.c.id}')">▶ Start ${esc(ct.c.title)}</button>` : `<a class="btn primary lg" href="${contHref}">▶ Continue</a>`}<a class="btn lg" href="#/courses">See the courses</a></div>
@@ -1346,7 +1478,7 @@ route('/', (view) => {
         </div>
       </div>
       <div class="term" aria-label="Today's progress">
-        <div class="tbar"><i></i><i></i><i></i><span>${esc((S.profile.name || 'student').toLowerCase().replace(/\s+/g, ''))}@compsci-study:~</span></div>
+        <div class="tbar"><i></i><i></i><i></i><span>${esc((S.profile.name || 'student').toLowerCase().replace(/\s+/g, ''))}@compci:~</span></div>
         <div class="tbody"><span class="prompt">$</span> today --goal
 Daily goal: ${Math.min(todayXp, goal)}/${goal} XP ${todayXp >= goal ? '✓ done!' : ''}
 [${'█'.repeat(Math.round(Math.min(1, todayXp / goal) * 20))}${'░'.repeat(20 - Math.round(Math.min(1, todayXp / goal) * 20))}]
@@ -1372,6 +1504,7 @@ ${EVENT.emoji} ${esc(EVENT.name)} (2× XP)
       </div>
     </section>
 
+    ${myCourseIds().includes('csa') || (S.profile.courses || []).length === 0 ? `<section class="section card ap-strip"><div class="spread"><div><span class="eyebrow">// AP CS A exam prep</span><h3 style="margin:2px 0">Practice exams & FRQs</h3><small class="muted">Timed exams like the real test, plus ${(window.FRQS || []).length} free-response questions with scoring rubrics.</small></div><div class="row"><a class="btn primary" href="#/frq">✍️ FRQ practice</a><a class="btn" href="#/exam">📝 Practice exam</a></div></div></section>` : ''}
     <section class="section" id="courses">
       <div class="section-head"><div><span class="eyebrow">// pick a course</span><h2>${(S.profile.courses || []).length ? 'Your CS classes' : 'Every CS class, freshman to senior'}</h2></div><a href="#/courses" class="btn sm">All courses</a></div>
       ${(S.profile.courses || []).length ? `<div class="year-label">Your courses</div><div class="grid g3">${myCourseIds().map(id => courseCard(COURSE[id])).join('')}</div>` : ''}
@@ -1401,7 +1534,7 @@ ${EVENT.emoji} ${esc(EVENT.name)} (2× XP)
     </section>
 
     <section class="section" style="text-align:center">
-      <div class="term" style="max-width:640px;margin:0 auto 24px;text-align:left"><div class="tbar"><i></i><i></i><i></i><span>~/compsci-study</span></div><div class="tbody"><span class="prompt">$</span> ./study.sh
+      <div class="term" style="max-width:640px;margin:0 auto 24px;text-align:left"><div class="tbar"><i></i><i></i><i></i><span>~/compci</span></div><div class="tbody"><span class="prompt">$</span> ./study.sh
 Your terminal is waiting. <span class="cursor"></span></div></div>
       <div class="row" style="justify-content:center"><a class="btn primary lg" href="${contHref}">Start studying</a><a class="btn lg" href="#/arcade">Play a game</a></div>
     </section>
@@ -1441,7 +1574,8 @@ route('/practice', (view, p) => {
     <div class="grid g4" style="margin:22px 0 34px">
       <a class="card hover search-hit" href="#/quiz?mode=review"><div style="font-size:2rem">🔄</div><h3>Review mistakes</h3><small class="muted">${S.mistakes.length} saved. Answer one correctly to clear it.</small></a>
       <a class="card hover search-hit" href="#/quiz?mode=practice&daily=1&n=10"><div style="font-size:2rem">🎲</div><h3>Daily mix</h3><small class="muted">10 questions from the courses you're taking.</small></a>
-      <a class="card hover search-hit" href="#/exam"><div style="font-size:2rem">📝</div><h3>AP CSA practice exams</h3><small class="muted">Timed full exams (42 MCQ + 4 FRQs), mini exams, unit tests and optional FRQ practice.</small></a>
+      <a class="card hover search-hit" href="#/exam"><div style="font-size:2rem">📝</div><h3>AP CSA practice exams</h3><small class="muted">Timed full exams (42 MCQ + 4 FRQs), mini exams and unit tests.</small></a>
+      <a class="card hover search-hit" href="#/frq"><div style="font-size:2rem">✍️</div><h3>AP CSA FRQ practice</h3><small class="muted">${(window.FRQS || []).length} free-response questions with sample solutions and scoring rubrics.</small></a>
       <a class="card hover search-hit" href="#/quiz?mode=topic&topic=if&n=15"><div style="font-size:2rem">🔀</div><h3>If statements (all courses)</h3><small class="muted">if, else, elif, booleans, and/or/not, switch and ternaries in Python, Java, JavaScript and AP pseudocode.</small></a>
       <a class="card hover search-hit" href="#/quiz?mode=squad"><div style="font-size:2rem">👥</div><h3>Squad question bank</h3><small class="muted">${sb.length ? sb.length + ' questions written by your squad' : 'Questions your squad writes show up here'}</small></a>
     </div>
@@ -1455,7 +1589,7 @@ route('/practice', (view, p) => {
       <label class="toggle" style="border:0"><span>Include squad-written questions</span><span class="switch"><input type="checkbox" id="p-sq" ${S.settings.squadQs ? 'checked' : ''}><span></span></span></label>
       <div class="row" style="justify-content:flex-end"><button class="btn primary lg" id="p-go">Start practice →</button></div>
     </div></div>${footer()}`;
-  const units = () => { const c = COURSE[$('#p-course', view).value]; $('#p-units', view).innerHTML = c.units.map((u, i) => `<label class="pill" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="${u.id}" checked> ${esc(u.title)}</label>`).join(''); };
+  const units = () => { const c = COURSE[$('#p-course', view).value]; $('#p-units', view).innerHTML = c.units.map((u, i) => isReached(u.id) ? `<label class="pill" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="${u.id}" checked> ${esc(u.title)}</label>` : `<span class="pill" style="opacity:.5;padding:6px 12px" title="Reach this module first">🔒 ${esc(u.title)}</span>`).join('') + `<small class="muted" style="flex-basis:100%">🔒 Practice only uses modules you've reached. Start or continue a course to unlock more.</small>`; };
   units(); $('#p-course', view).onchange = units;
   $('#p-sq', view).onchange = e => { S.settings.squadQs = e.target.checked; save(); };
   $('#p-go', view).onclick = () => {
@@ -1479,6 +1613,10 @@ route('/quiz', (view, p) => {
   else if (p.units) { pool = p.units.split(',').flatMap(u => unitQs(u, types)); title = p.mode === 'unit' ? `${UNIT[p.units]?.title || 'Unit'} · ${types.includes('quiz') ? 'Quiz' : 'Code challenges'}` : 'Practice set'; if (p.mode === 'unit') back = `/course/${UNIT[p.units]?.course}`; }
   else if (p.course) { pool = courseQs(p.course, types); title = COURSE[p.course]?.title + ' quiz'; back = `/course/${p.course}`; }
   else pool = allQs(types);
+  // games & practice only use modules you've reached (module quizzes and your own mistakes are exempt)
+  const scoped = p.mode !== 'unit' && p.mode !== 'review';
+  if (scoped) pool = scopeQs(pool);
+  if (scoped && !pool.length) { view.innerHTML = lockedNote(p.course ? COURSE[p.course]?.title : 'any course'); return; }
   if (S.settings.squadQs && p.mode === 'practice' && p.units) pool.push(...squadBankQs().filter(q => p.units.split(',').includes(q.unit)));
   const n = +p.n || (p.mode === 'unit' ? 999 : 10);
   if (p.mode === 'unit' && p.n) back = `/learn/${p.units}/0`;
@@ -1503,6 +1641,7 @@ const BOSSES = { py1: ['Type Error Troll', '👺'], py2: ['The Elif Hydra', '�
 route('/boss/:uid', (view, p) => {
   const u = UNIT[p.uid]; if (!u) return;
   const [name, face] = BOSSES[u.id] || ['Unit Guardian', '🛡️'];
+  if (!isReached(u.id)) { view.innerHTML = `<div class="wrap narrow"><div class="card empty"><span class="big">🔒</span><h2>${esc((BOSSES[u.id] || ['This boss'])[0])} is locked</h2><p>Reach <b>${esc(u.title)}</b> first. Boss battles only use lessons you've already learned.</p><button class="btn primary" onclick="startAt('${u.course}','${u.id}')">Start this module</button></div></div>`; return; }
   const pool = shuffle(unitQs(u.id));
   const need = Math.min(8, Math.max(4, pool.length - 3));
   const beaten = S.units[u.id]?.boss;
@@ -1970,6 +2109,7 @@ route('/exam', (view) => {
   const draft = S.examDraft;
   view.innerHTML = `<div class="wrap"><span class="eyebrow">// AP CSA exam prep</span><h1 style="font-size:2.2rem">☕ AP CSA Practice Exams</h1>
     <p class="muted" style="max-width:720px">Practice under real conditions. The AP CS A exam has <b>Section I</b> (42 multiple-choice questions, 90 minutes, 55% of your score) and <b>Section II</b> (4 free-response questions, 90 minutes, 45%). Questions are drawn from all four units, using the College Board's unit weightings.</p>
+    <div class="card ap-strip" style="margin:14px 0"><div class="spread"><div><b>✍️ Looking for FRQ practice?</b><br><small class="muted">${FRQ_LIST.length} free-response questions, 2 of each official type, with sample solutions and scoring rubrics.</small></div><a class="btn primary" href="#/frq">Open FRQ practice →</a></div></div>
     ${draft ? `<div class="notice ok" style="margin:16px 0"><b>You have an exam in progress:</b> ${esc(EXAM_MODES[draft.mode]?.name || 'Exam')}, ${draft.section === 2 ? 'Section II' : `${Object.keys(draft.answers).length}/${draft.qids.length} answered`}. <a class="btn sm primary" href="#/exam/run">Resume →</a> <button class="btn sm ghost" id="discard">Discard</button></div>` : ''}
     <div class="grid g2" style="margin-top:18px">
       ${['full', 'section1', 'mini'].map(k => `<div class="card"><h3>${k === 'full' ? '📝' : k === 'mini' ? '⚡' : '🅰️'} ${EXAM_MODES[k].name}</h3><p class="muted">${EXAM_MODES[k].blurb}</p><button class="btn ${k === 'full' ? 'primary' : ''}" data-start="${k}">Start</button></div>`).join('')}
@@ -2139,6 +2279,62 @@ route('/frq/:id', (view, p) => {
   draw(); onLeave(() => clearInterval(timer));
 });
 
+// ---- views-feedback.js ----
+/* ================= Feedback tab + owner inbox ================= */
+const FB_TYPES = [['idea', '💡', 'Suggestion'], ['bug', '🐛', 'Something is broken'], ['content', '📚', 'A lesson or question is wrong'], ['love', '❤️', 'Something I like']];
+route('/feedback', (view, p) => {
+  const from = p.from || S.lastPage || '';
+  const sent = (S.feedbackSent || []).slice(-5).reverse();
+  view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// feedback</span><h1 style="font-size:2.2rem">💬 Feedback & suggestions</h1>
+    <p class="muted">Got an idea, found a bug, or spotted a wrong answer? Tell us! Every message goes straight to the people who run CompciStudy.</p>
+    <form class="card" id="fb-form">
+      <fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:600;margin-bottom:8px">What kind of feedback?</legend><div class="grid g2" style="gap:8px">${FB_TYPES.map(([v, i, l], k) => `<label class="card fb-type" style="padding:12px;display:flex;gap:10px;align-items:center;cursor:pointer;box-shadow:none"><input type="radio" name="fb-t" value="${v}" ${k === 0 ? 'checked' : ''}> <span style="font-size:1.3rem">${i}</span> ${l}</label>`).join('')}</div></fieldset>
+      <label class="field"><span>Your message</span><textarea class="input" id="fb-msg" required maxlength="1500" rows="5" style="font-family:var(--font);font-size:1rem" placeholder="e.g. It would be cool if duels had a 3-player mode!"></textarea><small class="muted" id="fb-count">0/1500</small></label>
+      <label class="field"><span>Which page is this about? <small class="muted">(optional)</small></span><input class="input" id="fb-page" maxlength="120" value="${esc(from)}" placeholder="e.g. AP CS A › 2.4 Nested if Statements"></label>
+      <label class="toggle" style="border:0"><span>Send anonymously <small class="muted">(don't include my username)</small></span><span class="switch"><input type="checkbox" id="fb-anon"><span></span></span></label>
+      <div class="row" style="justify-content:flex-end"><button class="btn primary" id="fb-send">Send feedback</button></div>
+    </form>
+    ${sent.length ? `<h3 style="margin-top:24px">Your recent feedback</h3><div class="stack">${sent.map(f => `<div class="card" style="padding:12px 14px"><small class="muted">${(FB_TYPES.find(t => t[0] === f.type) || ['', '💬'])[1]} ${new Date(f.created).toLocaleDateString()} · ${f.state === 'queued' ? '⏳ will send when the server is reachable' : '✓ sent'}</small><div>${esc(f.message)}</div></div>`).join('')}</div>` : ''}
+    <p style="margin-top:20px"><a href="#/feedback/inbox" class="muted"><small>🔐 Site owner? Open the feedback inbox</small></a></p></div>${footer()}`;
+  const msg = $('#fb-msg', view);
+  msg.oninput = () => $('#fb-count', view).textContent = `${msg.value.length}/1500`;
+  $('#fb-form', view).onsubmit = async e => {
+    e.preventDefault();
+    const text = msg.value.trim(); if (text.length < 3) return toast('Write a little more first');
+    const anon = $('#fb-anon', view).checked;
+    const fb = { type: $('input[name=fb-t]:checked', view).value, message: text.slice(0, 1500), page: $('#fb-page', view).value.trim().slice(0, 120), name: anon ? '' : (S.profile.name || '').slice(0, 20), squad: anon ? '' : (S.squad?.name || ''), created: Date.now(), app: 'web' };
+    const b = $('#fb-send', view); b.disabled = true; b.textContent = 'Sending…';
+    let state;
+    try { state = await sendFeedback(fb); } catch (err) { S.feedbackQueue = [...(S.feedbackQueue || []), fb]; state = 'queued'; }
+    S.feedbackSent = [...(S.feedbackSent || []), { ...fb, state }].slice(-20); save();
+    toast(state === 'sent' ? 'Thanks! Feedback sent 💬' : 'Saved! It will send automatically', state === 'sent' ? 'We read every message.' : "The feedback server isn't reachable right now.");
+    confetti(40); render();
+  };
+});
+route('/feedback/inbox', (view) => {
+  const ss = squadState();
+  if (!ss.configured) { view.innerHTML = `<div class="wrap narrow"><h1 style="font-size:2rem">🔐 Feedback inbox</h1><div class="notice warn">The inbox needs the free Firebase setup (see <b>SETUP.md</b> → "Turn on squads"). Until then, feedback is saved on each person's device and sends automatically once Firebase is on.</div></div>`; return; }
+  view.innerHTML = `<div class="wrap narrow"><h1 style="font-size:2rem">🔐 Feedback inbox</h1><p class="muted">Checking access…</p></div>`;
+  isFeedbackAdmin().then(ok => {
+    if (!ok) {
+      view.innerHTML = `<div class="wrap narrow"><h1 style="font-size:2rem">🔐 Feedback inbox</h1><div class="card"><p>Only site owners can read feedback. To make <b>this browser</b> an owner, add this ID in Firebase:</p><pre class="console" style="user-select:all">${esc(FB.uid || '(not connected)')}</pre><ol class="muted"><li>Firebase console → <b>Firestore Database</b> → <b>Start collection</b> named <code>config</code></li><li>Document ID <code>admins</code>, with a field <code>uids</code> of type <b>array</b></li><li>Add the ID above as a string in that array, then <a href="#/feedback/inbox">reload this page</a></li></ol><small class="muted">The ID belongs to this browser. If you clear your browser data or use another device, add that new ID too.</small></div></div>`;
+      return;
+    }
+    let filter = 'new';
+    view.innerHTML = `<div class="wrap"><div class="spread"><div><span class="eyebrow">// owner only</span><h1 style="font-size:2rem;margin:0">🔐 Feedback inbox</h1></div><div class="tabs" style="margin:0"><button data-f="new" class="on">New</button><button data-f="done">Done</button><button data-f="all">All</button></div></div><div id="fb-list" style="margin-top:16px"><p class="muted">Loading…</p></div></div>`;
+    let items = [];
+    const draw = () => {
+      const list = items.filter(f => filter === 'all' || (filter === 'new' ? f.status !== 'done' : f.status === 'done'));
+      $('#fb-list', view).innerHTML = list.length ? list.map(f => `<div class="card fb-item ${f.status === 'done' ? 'done' : ''}"><div class="spread"><b>${(FB_TYPES.find(t => t[0] === f.type) || ['', '💬', 'Feedback'])[1]} ${esc((FB_TYPES.find(t => t[0] === f.type) || ['', '', 'Feedback'])[2])}</b><small class="muted">${new Date(f.created).toLocaleString()}</small></div><p style="white-space:pre-wrap;margin:8px 0">${esc(f.message)}</p><small class="muted">${f.name ? `👤 ${esc(f.name)}` : '👤 anonymous'}${f.squad ? ` · 👥 ${esc(f.squad)}` : ''}${f.page ? ` · 📍 ${esc(f.page)}` : ''}</small><div class="row" style="margin-top:10px"><button class="btn sm" data-done="${f.id}">${f.status === 'done' ? '↺ Mark as new' : '✓ Mark done'}</button><button class="btn sm ghost" data-del="${f.id}">🗑 Delete</button></div></div>`).join('') : '<div class="empty card">No feedback here. 🎉</div>';
+      $$('[data-done]', view).forEach(b => b.onclick = () => { const f = items.find(x => x.id === b.dataset.done); updateFeedback(f.id, { status: f.status === 'done' ? 'new' : 'done' }).catch(e => toast('Error', e.message)); });
+      $$('[data-del]', view).forEach(b => b.onclick = async () => { if (await confirmBox('Delete this feedback?', 'It will be removed permanently.', 'Delete')) deleteFeedback(b.dataset.del).catch(e => toast('Error', e.message)); });
+    };
+    $$('[data-f]', view).forEach(b => b.onclick = () => { filter = b.dataset.f; $$('[data-f]', view).forEach(x => x.classList.toggle('on', x === b)); draw(); });
+    const un = subFeedback((list, err) => { if (!list) { $('#fb-list', view).innerHTML = `<div class="notice warn">${esc(err?.message || 'Error')}</div>`; return; } items = list; draw(); });
+    onLeave(un);
+  });
+});
+
 // ---- views-arcade.js ----
 /* ================= Arcade: lobby, Bug Hunt, Speed Round, Duels, Weekly ================= */
 const GAMES = [
@@ -2163,22 +2359,23 @@ route('/arcade', (view) => {
   });
 });
 function coursePicker(title, cb, bugsOnly) {
-  const opts = [['all', '🌐', 'All courses', bugsOnly ? allQs(['bug']).length : allQs(['quiz', 'trace']).length], ['mine', '🎒', 'My courses', null], ...COURSES.map(c => [c.id, c.emoji, c.title, bugsOnly ? courseQs(c.id, ['bug']).length : courseQs(c.id, ['quiz', 'trace']).length])];
-  const m = modal(`<h3>${esc(title)}: pick a topic</h3><div class="stack" style="margin-top:14px">${opts.map(([id, e, n, k]) => `<button class="btn" style="width:100%;justify-content:space-between" data-c="${id}"><span>${e} ${esc(n)}</span>${k != null ? `<small class="muted">${k} Qs</small>` : ''}</button>`).join('')}</div>`);
+  const opts = [['all', '🌐', 'Everything I\'ve reached', bugsOnly ? allQs(['bug']).length : allQs(['quiz', 'trace']).length], ['mine', '🎒', 'My courses', null], ...COURSES.map(c => [c.id, c.emoji, c.title, bugsOnly ? courseQs(c.id, ['bug']).length : courseQs(c.id, ['quiz', 'trace']).length])];
+  const m = modal(`<h3>${esc(title)}: pick a topic</h3><p class="muted"><small>🔒 Only lessons you've reached are used, so you won't see things you haven't learned yet.</small></p><div class="stack" style="margin-top:14px">${opts.filter(([id, , , k]) => k == null || k > 0).map(([id, e, n, k]) => `<button class="btn" style="width:100%;justify-content:space-between" data-c="${id}"><span>${e} ${esc(n)}</span>${k != null ? `<small class="muted">${k} Qs</small>` : ''}</button>`).join('')}</div>`);
   $$('[data-c]', m).forEach(b => b.onclick = () => { closeModal(); cb(b.dataset.c); });
 }
 function poolFor(cid, types) {
-  if (cid === 'all') return allQs(types);
-  if (cid === 'mine' || cid === 'year') return myCourseIds().flatMap(id => courseQs(id, types));
-  return courseQs(cid, types);
+  if (cid === 'all') return scopeQs(allQs(types));
+  if (cid === 'mine' || cid === 'year') return scopeQs(myCourseIds().flatMap(id => courseQs(id, types)));
+  return scopeQs(courseQs(cid, types));
 }
 function bossPicker() {
-  const m = modal(`<h3>👹 Choose a boss</h3><div class="stack" style="margin-top:12px">${COURSES.map(c => `<div><b>${c.emoji} ${esc(c.title)}</b><div class="row" style="margin-top:6px">${c.units.map(u => `<a class="pill ${S.units[u.id]?.boss ? 'accent' : ''}" href="#/boss/${u.id}">${(BOSSES[u.id] || ['', '🛡️'])[1]} ${esc((BOSSES[u.id] || ['Guardian'])[0])}${S.units[u.id]?.boss ? ' ✓' : ''}</a>`).join('')}</div></div>`).join('')}</div>`, { wide: true });
+  const m = modal(`<h3>👹 Choose a boss</h3><div class="stack" style="margin-top:12px">${COURSES.map(c => `<div><b>${c.emoji} ${esc(c.title)}</b><div class="row" style="margin-top:6px">${c.units.map(u => !isReached(u.id) ? `<span class="pill" style="opacity:.5" title="Reach this module first">🔒 ${esc((BOSSES[u.id] || ['Guardian'])[0])}</span>` : `<a class="pill ${S.units[u.id]?.boss ? 'accent' : ''}" href="#/boss/${u.id}">${(BOSSES[u.id] || ['', '🛡️'])[1]} ${esc((BOSSES[u.id] || ['Guardian'])[0])}${S.units[u.id]?.boss ? ' ✓' : ''}</a>`).join('')}</div></div>`).join('')}</div>`, { wide: true });
   $$('a', m).forEach(a => a.addEventListener('click', () => closeModal()));
 }
 
 route('/bughunt', (view, p) => {
   const pool = shuffle(poolFor(p.course || 'all', ['bug']));
+  if (!pool.length) { view.innerHTML = lockedNote('a course with code challenges'); return; }
   if (EVENT.bugBonus) toast('🐛 Bug Bash week', 'Bug Hunt XP is doubled!');
   runQuiz(view, {
     title: 'Bug Hunt', questions: pool.slice(0, 8), mode: 'bughunt', lives: 3, timeLimit: 120, explain: true, back: '/arcade',
@@ -2194,6 +2391,7 @@ route('/bughunt', (view, p) => {
 
 route('/speed', (view, p) => {
   const base = poolFor(p.course || 'all', ['quiz', 'trace']);
+  if (!base.length) { view.innerHTML = lockedNote(); return; }
   runQuiz(view, {
     title: 'Speed Round', questions: shuffle(base), endless: true, more: () => shuffle(base), mode: 'speed', timeLimit: 60, timePenalty: 3, explain: false, back: '/arcade', confirmQuit: false,
     scoreFn: (q, ok, ms, st) => ok ? Math.round(10 * (st.combo >= 10 ? 3 : st.combo >= 5 ? 2 : st.combo >= 3 ? 1.5 : 1)) : 0,
@@ -2223,6 +2421,7 @@ route('/duel', (view, p) => {
 route('/duel/bot', (view, p) => {
   const bot = BOTS[p.level] || BOTS.normal;
   const qs = shuffle(poolFor(p.course || 'mine', ['quiz', 'trace'])).slice(0, 7);
+  if (!qs.length) { view.innerHTML = lockedNote(); return; }
   const bs = { score: 0, idx: 0, last: '' }; let bt = null;
   const extra = st => `<div class="duel-vs"><div class="side-p">${avatarHtml(S.profile, 'sm')}<div style="min-width:0"><div class="nm">${esc(S.profile.name || 'You')}</div><div class="pts">${st.score} pts</div></div></div><span class="vs">VS</span><div class="side-p"><span class="avatar sm" style="border-color:var(--accent2)">${bot.a}</span><div style="min-width:0"><div class="nm">${bot.n}</div><div class="pts" id="bot-pts">${bs.score} pts ${bs.last}</div></div></div></div>`;
   const resolveBot = () => { clearTimeout(bt); if (bs.pending == null) return; const ok = Math.random() < bot.acc; bs.score += duelPoints(ok, bs.pending); bs.last = ok ? '✓' : '✗'; bs.pending = null; updateBot(); };
@@ -2243,11 +2442,15 @@ route('/duel/bot', (view, p) => {
 
 /* ---------- Weekly challenge ---------- */
 route('/weekly', (view) => {
-  const pool = EVENT.units.flatMap(u => unitQs(u));
+  let pool = scopeQs(EVENT.units.flatMap(u => unitQs(u)));
+  const fromEvent = pool.length >= 5;
+  if (!fromEvent) pool = scopeQs(allQs(['quiz', 'trace', 'bug', 'fill']));
   const qs = shuffle(pool, seeded(EVENT.week)).slice(0, 10);
+  if (!qs.length) { view.innerHTML = lockedNote(); return; }
   const mine = S.weekly[EVENT.week];
   const sq = squadState();
   view.innerHTML = `<div class="wrap narrow"><div class="card" style="text-align:center"><div style="font-size:4rem">${EVENT.emoji}</div><span class="eyebrow">Weekly challenge · ${esc(EVENT.week)}</span><h1 style="font-size:2rem">${esc(EVENT.name)}</h1>
+    ${fromEvent ? '' : `<p class="notice" style="text-align:left"><small>🔒 You haven't reached this week's event modules yet, so your challenge uses lessons you have reached instead.</small></p>`}
     <p class="muted">Everyone gets the same 10 questions this week. Correct answers score 100 points, plus up to 50 for speed. Your best score counts${sq.inSquad ? ' on the squad weekly leaderboard' : ''}.</p>
     <div class="row" style="justify-content:center"><span class="pill">10 questions</span><span class="pill accent">2× XP</span>${mine ? `<span class="pill">Your best: ${mine.best}</span>` : ''}<span class="pill">${daysLeftInWeek()} day${daysLeftInWeek() === 1 ? '' : 's'} left</span></div>
     <div class="row" style="justify-content:center;margin-top:20px"><button class="btn primary lg" id="w-go">${mine ? 'Try again' : 'Start'} →</button>${sq.inSquad ? '<a class="btn lg" href="#/squad?tab=weekly">Squad scores</a>' : ''}</div></div></div>`;
@@ -2296,6 +2499,7 @@ function fbInit() {
       }), 12000, 'Could not sign in to Firebase (is Anonymous sign-in enabled?)');
       FB.uid = user.uid; FB.f = fsM; FB.db = fsM.getFirestore(app); FB.status = 'ok';
       if (S.squad?.code) { refreshSquadMeta(); writeMember(); startBankSync(); startAssignSync(); }
+      flushFeedbackQueue();
       return true;
     } catch (e) {
       console.warn('Firebase init failed', e); FB.status = 'error'; FB.err = e.code || e.message || String(e); return false;
@@ -2404,6 +2608,7 @@ async function createLiveDuel(cid) {
   try {
     await fbInit(); if (FB.status !== 'ok') throw new Error('Squad server not reachable');
     const qids = shuffle(poolFor(cid, ['quiz', 'trace'])).slice(0, 7).map(q => q.id);
+    if (qids.length < 3) throw new Error("Reach a few more lessons in this topic first. Duels only use lessons you've reached.");
     const ref = await FB.f.addDoc(fcol(...sqPath(), 'duels'), { host: FB.uid, hostName: S.profile.name || 'Student', hostAvatar: S.profile.avatar, hostColor: S.profile.color, guest: null, guestName: '', guestAvatar: '', guestColor: '', course: cid, qids, seed: genCode(), status: 'open', hs: 0, gs: 0, hi: 0, gi: 0, created: Date.now() });
     go('/live/' + ref.id);
   } catch (e) { toast('Could not create duel', e.message); }
@@ -2440,19 +2645,40 @@ function stopAssignSync() { assignUnsub && assignUnsub(); assignUnsub = null; }
 async function createAssignment(a) { await FB.f.addDoc(fcol(...sqPath(), 'assignments'), { ...a, by: FB.uid, byName: S.profile.name || 'Leader', created: Date.now() }); }
 const deleteAssignment = id => FB.f.deleteDoc(fdoc(...sqPath(), 'assignments', id));
 
+/* ---------- Feedback (anyone can send; only admins listed in config/admins can read) ---------- */
+async function sendFeedback(fb) {
+  await fbInit();
+  if (FB.status !== 'ok') { S.feedbackQueue = [...(S.feedbackQueue || []), fb]; save(); return 'queued'; }
+  await FB.f.addDoc(fcol('feedback'), { ...fb, uid: FB.uid, status: 'new' });
+  return 'sent';
+}
+async function flushFeedbackQueue() {
+  if (FB.status !== 'ok' || !(S.feedbackQueue || []).length) return;
+  const q = S.feedbackQueue.slice(); S.feedbackQueue = []; save();
+  for (const fb of q) { try { await FB.f.addDoc(fcol('feedback'), { ...fb, uid: FB.uid, status: 'new' }); } catch (e) { S.feedbackQueue.push(fb); } }
+  save();
+}
+async function isFeedbackAdmin() {
+  await fbInit(); if (FB.status !== 'ok') return false;
+  try { const s = await FB.f.getDoc(fdoc('config', 'admins')); return s.exists() && (s.data().uids || []).includes(FB.uid); } catch (e) { return false; }
+}
+function subFeedback(cb) { return FB.f.onSnapshot(FB.f.query(fcol('feedback'), FB.f.orderBy('created', 'desc'), FB.f.limit(300)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => cb(null, e)); }
+const updateFeedback = (id, data) => FB.f.updateDoc(fdoc('feedback', id), data);
+const deleteFeedback = id => FB.f.deleteDoc(fdoc('feedback', id));
+
 // ---- views-squad.js ----
 /* ================= Squad UI + live duel ================= */
 route('/squad', (view, p) => {
   const ss = squadState();
   const head = `<span class="eyebrow">// squad</span><h1 style="font-size:2.2rem">Squad</h1>`;
   if (!ss.configured) {
-    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Squad features aren't switched on for this site yet.</b><p class="muted" style="margin:6px 0 0">Whoever set up this CompSci-Study site needs to connect a free Firebase database (about 20 minutes, once). The steps are in <b>SETUP.md</b> in the GitHub repo, under "Turn on squads".</p></div>
+    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Squad features aren't switched on for this site yet.</b><p class="muted" style="margin:6px 0 0">Whoever set up this CompciStudy site needs to connect a free Firebase database (about 20 minutes, once). The steps are in <b>SETUP.md</b> in the GitHub repo, under "Turn on squads".</p></div>
       <div class="card" style="margin-top:16px"><h3>Meanwhile, you can still:</h3><ul><li>Study every course, quiz and code challenge</li><li>Duel <a href="#/duel">ByteBot</a> in the arcade</li><li>Play the <a href="#/weekly">weekly challenge</a></li></ul></div></div>`;
     return;
   }
   if (ss.status === 'loading' || ss.status === 'off') { view.innerHTML = `<div class="wrap narrow">${head}<p class="muted">Connecting to the squad server…</p></div>`; fbInit(); return; }
   if (ss.status === 'error') {
-    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Can't reach the squad server right now.</b><p class="muted" style="margin:6px 0 10px">Your school's network may be blocking Firebase (Google's database service), or you might be offline. Everything else in CompSci-Study still works. Try again from home, or ask your teacher about allowing <code>firestore.googleapis.com</code>.</p><small class="muted">Details: ${esc(ss.err)}</small></div><button class="btn primary" style="margin-top:14px" id="retry">Try again</button></div>`;
+    view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Can't reach the squad server right now.</b><p class="muted" style="margin:6px 0 10px">Your school's network may be blocking Firebase (Google's database service), or you might be offline. Everything else in CompciStudy still works. Try again from home, or ask your teacher about allowing <code>firestore.googleapis.com</code>.</p><small class="muted">Details: ${esc(ss.err)}</small></div><button class="btn primary" style="margin-top:14px" id="retry">Try again</button></div>`;
     $('#retry', view).onclick = () => { fbReady = null; FB.status = 'off'; fbInit(); render(); };
     return;
   }
@@ -2480,7 +2706,7 @@ function squadHome(view, p) {
       <a class="btn primary" href="#/duel">⚔️ Duel</a></div>
     <div class="tabs" style="margin-top:22px" role="tablist">${[['board', '🏆 Leaderboard'], ['duels', '⚔️ Duels'], ['bank', '✍️ Question bank'], ['weekly', `${EVENT.emoji} Weekly`], ['manage', '⚙️ Squad settings']].map(([k, l]) => `<button role="tab" class="${tab === k ? 'on' : ''}" onclick="go('/squad?tab=${k}')">${l}</button>`).join('')}</div>
     <div id="sq-body"><p class="muted">Loading…</p></div></div>`;
-  $('#copy-code', view).onclick = () => { const txt = `Join my CompSci-Study squad "${S.squad.name}"! Code: ${fmtCode(S.squad.code)}\n${link}`; navigator.clipboard?.writeText(txt).then(() => toast('Invite copied!', 'Paste it in your group chat.'), () => modal(`<h3>Invite link</h3><textarea class="input" readonly>${esc(txt)}</textarea>`)); };
+  $('#copy-code', view).onclick = () => { const txt = `Join my CompciStudy squad "${S.squad.name}"! Code: ${fmtCode(S.squad.code)}\n${link}`; navigator.clipboard?.writeText(txt).then(() => toast('Invite copied!', 'Paste it in your group chat.'), () => modal(`<h3>Invite link</h3><textarea class="input" readonly>${esc(txt)}</textarea>`)); };
   const body = $('#sq-body', view);
   const mUn = subMembers((list) => { if (list) $('#m-count', view) && ($('#m-count', view).textContent = `${list.length} member${list.length === 1 ? '' : 's'}`); });
   onLeave(mUn);
@@ -2711,7 +2937,7 @@ route('/settings', (view) => {
   const st = S.settings, t = THEMES[st.theme] || THEMES.terminal;
   const curBg = st.bg || t.bg, curFg = st.fg || t.fg, curAc = st.accent || t.accent;
   const cr = contrast(curBg, curFg);
-  view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// settings</span><h1 style="font-size:2.2rem">Customize</h1><p class="muted">Make CompSci-Study look the way you want. Changes save automatically.</p>
+  view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// settings</span><h1 style="font-size:2.2rem">Customize</h1><p class="muted">Make CompciStudy look the way you want. Changes save automatically.</p>
     <div class="card" style="margin-top:18px"><h3>🎨 Theme</h3><div class="theme-grid" style="margin-top:10px">${Object.entries(THEMES).map(([k, th]) => `<button class="theme-opt ${st.theme === k ? 'on' : ''}" data-t="${k}" aria-pressed="${st.theme === k}"><span class="pv" style="background:${th.bg}"><i style="width:40%;background:${th.accent}"></i><i style="width:25%;background:${th.accent2}"></i><i style="width:15%;background:${th.fg};opacity:.5"></i></span><span class="nm">${esc(th.name)}</span></button>`).join('')}</div></div>
     <div class="card" style="margin-top:16px"><h3>🖌️ Custom colors</h3><p class="muted"><small>These override the theme. Click reset to go back to the theme's colors.</small></p>
       <div class="toggle"><span>Accent color</span><span class="row"><input type="color" id="c-ac" value="${curAc}"><button class="btn sm ghost" data-reset="accent">Reset</button></span></div>
@@ -2740,8 +2966,8 @@ route('/settings', (view) => {
   $$('[data-k]', view).forEach(i => i.onchange = () => { st[i.dataset.k] = i.checked; save(); applyTheme(); if (i.dataset.k === 'sound' && i.checked) sfx('ok'); });
   $('#f-vol', view).onchange = e => { st.volume = +e.target.value; save(); sfx('ok'); };
   $('#f-goal', view).onchange = e => { st.dailyGoal = +e.target.value; save(); };
-  $('#d-exp', view).onclick = () => { const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `compsci-study-backup-${today()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
-  $('#d-imp', view).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const data = JSON.parse(await f.text()); if (!data || typeof data !== 'object' || !('xp' in data)) throw new Error('Not a CompSci-Study backup'); if (await confirmBox('Import this backup?', 'It replaces the progress saved in this browser.', 'Import')) { S = deepMerge(DEFAULT_STATE(), data); saveNow(); applyTheme(); toast('Backup imported'); render(); } } catch (err) { toast('Import failed', err.message); } };
+  $('#d-exp', view).onclick = () => { const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `compcistudy-backup-${today()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+  $('#d-imp', view).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const data = JSON.parse(await f.text()); if (!data || typeof data !== 'object' || !('xp' in data)) throw new Error('Not a CompciStudy backup'); if (await confirmBox('Import this backup?', 'It replaces the progress saved in this browser.', 'Import')) { S = deepMerge(DEFAULT_STATE(), data); saveNow(); applyTheme(); toast('Backup imported'); render(); } } catch (err) { toast('Import failed', err.message); } };
   $('#d-reset', view).onclick = async () => { if (await confirmBox('Reset everything?', 'This deletes all your XP, progress, badges and settings in this browser. It cannot be undone.', 'Delete everything')) { await leaveSquad(); S = DEFAULT_STATE(); saveNow(); applyTheme(); location.hash = '/'; location.reload(); } };
 });
 
@@ -2753,21 +2979,23 @@ route('/help', (view) => {
     ['What are boss battles?', 'Boss battles are optional. At the end of each module you can fight its boss: you get 3 hearts, and each correct answer damages the boss. You can skip bosses, or turn them off completely in Settings.'],
     ['How are courses organized?', 'Each course is split into modules (units). A module has lessons, then coding exercises you run and test right in the browser, then fill-in-the-code exercises. After that come the unit quiz, code challenges and an optional boss. You can start a course on any module.'],
     ['How do assignments work?', 'Anyone can add items to their own plan with a due date. Squad leaders (or a teacher who creates the squad) can assign work to the whole squad. Items check themselves off when you finish them, and leaders see who finished in the Gradebook.'],
+    ['Why don\'t games ask about lessons I haven\'t done?', 'On purpose! Duels, Speed Round, Bug Hunt, the weekly challenge, practice sets and boss battles only use modules you\'ve reached, so you never get quizzed on things you haven\'t learned. Module quizzes inside lessons and the AP practice exams cover everything. Starting a course at a later module counts the modules before it as reached.'],
+    ['How do I send a suggestion?', 'Click the 💬 Feedback tab on the right edge of the screen (on a phone, it\'s in the menu under your avatar). Your message goes straight to the people who run the site.'],
     ['How do the AP CSA practice exams work?', 'Open Practice → AP CSA practice exams. The full exam is like exam day: Section I has 42 multiple-choice questions in 90 minutes, and Section II has 4 free-response questions in 90 minutes. Questions are drawn from all four units using the College Board weightings. You see your score by unit, review every answer, and grade your FRQs with the rubrics. There are also mini exams and unit tests, and you can leave and resume an exam later.'],
     ['What are the underlined words in lessons?', 'They\'re glossary terms. Click one to see what it means in plain English. The full list is on the Glossary page (in the menu under your avatar).'],
-    ['Can I change the examples in lessons?', 'Yes! Every "Try it" box is a live editor. Change the code and press Run (or Ctrl+Enter). If something breaks, CompSci-Study explains the error in plain English. Press Reset to get the original back.'],
+    ['Can I change the examples in lessons?', 'Yes! Every "Try it" box is a live editor. Change the code and press Run (or Ctrl+Enter). If something breaks, CompciStudy explains the error in plain English. Press Reset to get the original back.'],
     ['Do the coding exercises run real code?', 'Yes! Python runs in your browser (it downloads about 10 MB the first time), and JavaScript and HTML run instantly. Java and AP pseudocode use fill-in-the-code exercises instead.'],
     ['How do squads work?', 'A squad is a study group with a 6-character code. Members share a live leaderboard, a weekly squad goal, 1v1 duels and a question bank. The person who creates the squad is the leader, and they approve new questions and can remove members.'],
     ['Is my data private?', 'Your progress is stored only in this browser. If you join a squad, your username, avatar, XP, level and streak are shared with that squad. Questions you write are shared too. No email, no real name and no tracking.'],
     ['I switched computers and my progress is gone!', 'Progress lives in each browser. Use Settings → Export backup on one device and Import on the other.'],
     ['The squad page says it can\'t connect', 'Some school networks block Google\'s Firebase servers. Everything else still works. Try from home, or ask your teacher to allow firestore.googleapis.com.'],
-    ['Something is wrong in a question!', 'Tell whoever runs your CompSci-Study site. The content lives in plain text files in the GitHub repo, so it\'s easy to fix. For squad questions, use the Report button.'],
-    ['Can I install it like an app?', 'Yes. In Chrome, open the ⋮ menu and choose "Install CompSci-Study" (or "Add to Home screen" on a phone).'],
+    ['Something is wrong in a question!', 'Tell whoever runs your CompciStudy site. The content lives in plain text files in the GitHub repo, so it\'s easy to fix. For squad questions, use the Report button.'],
+    ['Can I install it like an app?', 'Yes. In Chrome, open the ⋮ menu and choose "Install CompciStudy" (or "Add to Home screen" on a phone).'],
     ['Keyboard shortcuts?', 'In quizzes, press 1–4 to pick an answer and Enter for the next question.'],
   ];
   view.innerHTML = `<div class="wrap narrow"><span class="eyebrow">// help</span><h1 style="font-size:2.2rem">Help & FAQ</h1>
     <div class="stack">${faq.map(([q, a]) => `<details class="card"><summary style="cursor:pointer;font-weight:700">${esc(q)}</summary><p class="muted" style="margin:10px 0 0">${esc(a)}</p></details>`).join('')}</div>
-    <div class="card" style="margin-top:20px"><h3>About CompSci-Study</h3><p class="muted">A free study site for high school computer science, built for a group of friends. AP® is a trademark of the College Board, which is not affiliated with this site. Content follows the 2025–26 AP CSA framework and the AP CSP big ideas.</p><button class="btn" id="redo-onb">Replay the welcome tour</button></div></div>${footer()}`;
+    <div class="card" style="margin-top:20px"><h3>About CompciStudy</h3><p class="muted">A free study site for high school computer science, built for a group of friends. AP® is a trademark of the College Board, which is not affiliated with this site. Content follows the 2025–26 AP CSA framework and the AP CSP big ideas.</p><button class="btn" id="redo-onb">Replay the welcome tour</button></div></div>${footer()}`;
   $('#redo-onb', view).onclick = () => onboarding();
 });
 
@@ -2776,7 +3004,7 @@ function onboarding() {
   const d = { name: S.profile.name, avatar: S.profile.avatar, color: S.profile.color, year: S.profile.year, courses: [...(S.profile.courses || [])], theme: S.settings.theme };
   let step = 0;
   const steps = [
-    () => `<div style="text-align:center"><div style="font-size:3.4rem">&gt;_</div><h2>Welcome to CompSci-Study</h2><p class="muted">Study every high school CS class with notes, quizzes, code challenges, boss battles and duels with your friends.</p></div>
+    () => `<div style="text-align:center"><div style="font-size:3.4rem">&gt;_</div><h2>Welcome to CompciStudy</h2><p class="muted">Study every high school CS class with notes, quizzes, code challenges, boss battles and duels with your friends.</p></div>
       <label class="field"><span>Pick a username</span><input class="input" id="o-name" maxlength="20" value="${esc(d.name)}" placeholder="e.g. ByteSized" autofocus></label><p class="muted"><small>🔒 Use a nickname, not your full real name. Your squad sees this name.</small></p>`,
     () => `<h2>Choose your look</h2><div class="row" style="margin-bottom:12px"><span id="o-av">${avatarHtml(d, 'lg')}</span></div><div class="emoji-grid">${AVATARS.map(a => `<button type="button" data-a="${a}" class="${a === d.avatar ? 'on' : ''}">${a}</button>`).join('')}</div><div class="swatches" style="margin-top:12px">${COLORS.map(c => `<button type="button" data-c="${c}" class="${c === d.color ? 'on' : ''}" style="background:${c}" aria-label="${c}"></button>`).join('')}</div>`,
     () => `<h2>What grade are you in?</h2><div class="grid g2" style="margin-top:14px">${GRADES.map(([y, l]) => `<button class="btn lg ${d.year === y ? 'primary' : ''}" style="width:100%" data-y="${y}" aria-pressed="${d.year === y}">${l}</button>`).join('')}</div>`,

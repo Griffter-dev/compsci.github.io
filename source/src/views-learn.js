@@ -61,6 +61,7 @@ ${EVENT.emoji} ${esc(EVENT.name)} (2× XP)
       </div>
     </section>
 
+    ${myCourseIds().includes('csa') || (S.profile.courses || []).length === 0 ? `<section class="section card ap-strip"><div class="spread"><div><span class="eyebrow">// AP CS A exam prep</span><h3 style="margin:2px 0">Practice exams & FRQs</h3><small class="muted">Timed exams like the real test, plus ${(window.FRQS || []).length} free-response questions with scoring rubrics.</small></div><div class="row"><a class="btn primary" href="#/frq">✍️ FRQ practice</a><a class="btn" href="#/exam">📝 Practice exam</a></div></div></section>` : ''}
     <section class="section" id="courses">
       <div class="section-head"><div><span class="eyebrow">// pick a course</span><h2>${(S.profile.courses || []).length ? 'Your CS classes' : 'Every CS class, freshman to senior'}</h2></div><a href="#/courses" class="btn sm">All courses</a></div>
       ${(S.profile.courses || []).length ? `<div class="year-label">Your courses</div><div class="grid g3">${myCourseIds().map(id => courseCard(COURSE[id])).join('')}</div>` : ''}
@@ -130,7 +131,8 @@ route('/practice', (view, p) => {
     <div class="grid g4" style="margin:22px 0 34px">
       <a class="card hover search-hit" href="#/quiz?mode=review"><div style="font-size:2rem">🔄</div><h3>Review mistakes</h3><small class="muted">${S.mistakes.length} saved. Answer one correctly to clear it.</small></a>
       <a class="card hover search-hit" href="#/quiz?mode=practice&daily=1&n=10"><div style="font-size:2rem">🎲</div><h3>Daily mix</h3><small class="muted">10 questions from the courses you're taking.</small></a>
-      <a class="card hover search-hit" href="#/exam"><div style="font-size:2rem">📝</div><h3>AP CSA practice exams</h3><small class="muted">Timed full exams (42 MCQ + 4 FRQs), mini exams, unit tests and optional FRQ practice.</small></a>
+      <a class="card hover search-hit" href="#/exam"><div style="font-size:2rem">📝</div><h3>AP CSA practice exams</h3><small class="muted">Timed full exams (42 MCQ + 4 FRQs), mini exams and unit tests.</small></a>
+      <a class="card hover search-hit" href="#/frq"><div style="font-size:2rem">✍️</div><h3>AP CSA FRQ practice</h3><small class="muted">${(window.FRQS || []).length} free-response questions with sample solutions and scoring rubrics.</small></a>
       <a class="card hover search-hit" href="#/quiz?mode=topic&topic=if&n=15"><div style="font-size:2rem">🔀</div><h3>If statements (all courses)</h3><small class="muted">if, else, elif, booleans, and/or/not, switch and ternaries in Python, Java, JavaScript and AP pseudocode.</small></a>
       <a class="card hover search-hit" href="#/quiz?mode=squad"><div style="font-size:2rem">👥</div><h3>Squad question bank</h3><small class="muted">${sb.length ? sb.length + ' questions written by your squad' : 'Questions your squad writes show up here'}</small></a>
     </div>

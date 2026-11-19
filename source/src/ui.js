@@ -110,26 +110,25 @@ window.addEventListener('hashchange', render);
 
 /* ---------- Chrome: top bar + mobile tab bar ---------- */
 const NAV = [['/', 'Home', '🏠'], ['/courses', 'Courses', '📚'], ['/assignments', 'Assigned', '📋'], ['/arcade', 'Arcade', '🕹️'], ['/squad', 'Squad', '👥']];
-const DESK_NAV = [['/courses', 'Courses'], ['/practice', 'Practice'], ['/assignments', 'Assignments'], ['/arcade', 'Arcade'], ['/squad', 'Squad'], ['/notes', 'Notes']];
+const DESK_NAV = [['/courses', 'Courses', '📚'], ['/practice', 'Practice', '🎯'], ['/exam', 'AP Exam & FRQs', '📝'], ['/assignments', 'Assignments', '📋'], ['/arcade', 'Arcade', '🕹️'], ['/squad', 'Squad', '👥'], ['/notes', 'Notes', '🗒️'], ['/feedback', 'Feedback', '💬']];
 function renderChrome() {
   const p = (location.hash.slice(1) || '/').split('?')[0];
-  const active = href => href === '/' ? p === '/' : p.startsWith(href) || (href === '/courses' && (p.startsWith('/course') || p.startsWith('/learn') || p.startsWith('/ex/') || p.startsWith('/unit-done')));
+  const active = href => href === '/exam' ? (p.startsWith('/exam') || p.startsWith('/frq')) : href === '/' ? p === '/' : p.startsWith(href) || (href === '/courses' && (p.startsWith('/course') || p.startsWith('/learn') || p.startsWith('/ex/') || p.startsWith('/unit-done')));
   const due = typeof dueBadgeCount === 'function' ? dueBadgeCount() : 0;
   const tag = h => h === '/arcade' ? '<span class="tag">2×</span>' : h === '/assignments' && due ? `<span class="tag due">${due}</span>` : '';
   const st = streakAlive(), L = levelFor(S.xp);
   $('#topbar').innerHTML = `
     <a class="logo" href="#/" aria-label="CompciStudy home"><span class="mark">&gt;_</span><span>Compci<b>Study</b></span></a>
-    <nav class="navlinks" aria-label="Main">${DESK_NAV.map(([h, n]) => `<a href="#${h}" class="${active(h) ? 'on' : ''}">${n}${tag(h)}</a>`).join('')}</nav>
+    <nav class="navlinks" aria-label="Main">${DESK_NAV.map(([h, n, i]) => `<a href="#${h === '/feedback' ? '/feedback?from=' + encodeURIComponent(pageLabel()) : h}" class="${active(h) ? 'on' : ''}" title="${n}"><span class="ni" aria-hidden="true">${i}</span><span class="nl">${n}</span>${tag(h)}</a>`).join('')}</nav>
     <div class="topright">
+      <button class="chip search-btn" id="search-btn" aria-label="Search lessons, practices and units (shortcut: /)" title="Search  ( / )">🔍 <span class="search-lbl">Search</span><kbd>/</kbd></button>
       <span class="chip" title="Day streak">🔥 ${st}</span>
       <span class="chip xp" title="Level ${L}">⭐ ${fmtNum(S.xp)} XP · L${L}</span>
       <button class="iconbtn" id="me-btn" aria-label="Open profile menu" aria-haspopup="true">${avatarHtml(S.profile)}</button>
     </div>`;
   $('#tabbar').innerHTML = NAV.map(([h, n, i]) => `<a href="#${h}" class="${active(h) ? 'on' : ''}"><span class="i">${i}${h === '/assignments' && due ? `<span class="tbadge">${due}</span>` : ''}</span>${n}</a>`).join('');
   $('#me-btn').onclick = e => { e.stopPropagation(); toggleMenu(); };
-  let tab = $('#fb-tab'); if (!tab) { tab = document.createElement('a'); tab.id = 'fb-tab'; tab.className = 'fb-tab noprint'; tab.innerHTML = '💬 Feedback'; document.body.appendChild(tab); }
-  tab.classList.toggle('hidden', p.startsWith('/feedback') || p.startsWith('/exam/run'));
-  tab.href = `#/feedback?from=${encodeURIComponent(pageLabel())}`;
+  $('#search-btn').onclick = e => { e.stopPropagation(); openSearch(); };
 }
 // a friendly name for the current page (sent along with feedback)
 function pageLabel() {
@@ -146,7 +145,7 @@ function toggleMenu() {
   const ex = $('.menu'); if (ex) { ex.remove(); return; }
   const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'menu');
   m.innerHTML = `<div style="padding:8px 12px"><b>${esc(S.profile.name || 'Student')}</b><br><small>${esc(myTitle())} · Level ${levelFor(S.xp)}</small></div><hr>
-    <a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/notes" role="menuitem">📝 Notes & cheat sheets</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/feedback" role="menuitem">💬 Feedback</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>`;
+    <a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/exam" role="menuitem">📝 AP Exam & FRQs</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/notes" role="menuitem">📝 Notes & cheat sheets</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/feedback?from=${encodeURIComponent(pageLabel())}" role="menuitem">💬 Feedback</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>`;
   document.body.appendChild(m);
   $('a', m).focus();
   const off = e => { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('click', off); } };
@@ -157,3 +156,77 @@ function footer() {
   return `<footer class="footer"><div class="cols"><div><b class="mono">Compci<span style="color:var(--accent)">Study</span></b><br>Made by students, for students. Free forever.</div>
   <div><a href="#/courses">Courses</a><a href="#/assignments">Assignments</a><a href="#/arcade">Arcade</a><a href="#/squad">Squad</a><a href="#/notes">Notes</a><a href="#/glossary">Glossary</a><a href="#/feedback">Feedback</a><a href="#/help">Help & FAQ</a><a href="#/settings">Settings</a></div></div></footer>`;
 }
+
+/* ---------- Search (button left of the streak counter, or press / or Ctrl+K) ---------- */
+let SEARCH_INDEX = null;
+function buildSearchIndex() {
+  const idx = [];
+  const add = (kind, icon, title, sub, href, text = '', boost = 0) => idx.push({ kind, icon, title, sub, href, t: title.toLowerCase(), s: (sub + ' ' + text).toLowerCase(), boost });
+  for (const c of COURSES) {
+    add('Course', c.emoji, c.title, `${c.short} · ${c.yearLabel}`, `#/course/${c.id}`, c.blurb, 3);
+    c.units.forEach((u, ui) => {
+      add('Unit', '📦', u.title, `${c.title} · Module ${ui + 1}${u.weight ? ' · AP ' + u.weight : ''}`, `#/course/${c.id}`, u.lessons.map(l => l.title).join(' '), 2);
+      u.lessons.forEach((l, li) => add('Lesson', '📖', l.title, `${c.title} › ${u.title}`, `#/learn/${u.id}/${li}`, l.text.slice(0, 1500), 1));
+      u.ex.forEach(e => add('Coding practice', '💻', e.title, `${c.title} › ${u.title}`, `#/ex/${e.id}`, e.prompt.replace(/<[^>]+>/g, ' '), 1));
+      u.fill.forEach(f => add('Fill in the code', '🧩', f.title || 'Fill in the code', `${c.title} › ${u.title}`, `#/ex/${f.id}`, f.q, 0));
+      add('Unit quiz', '📝', `${u.title}: unit quiz`, c.title, `#/quiz?mode=unit&units=${u.id}&types=quiz`, 'quiz test practice', 0);
+      if (S.settings.bosses) add('Boss battle', '👹', `${(BOSSES[u.id] || ['Unit boss'])[0]} (boss)`, `${c.title} › ${u.title}`, `#/boss/${u.id}`, 'boss battle fight', -1);
+    });
+  }
+  for (const f of (window.FRQS || [])) add('FRQ', '✍️', `FRQ: ${f.title}`, `AP CSA · Q${f.q} ${FRQ_TYPES[f.q]}`, `#/frq/${f.id}`, 'free response frq ' + f.scenario.replace(/<[^>]+>/g, ' ').slice(0, 600), 2);
+  [['📝', 'AP CSA practice exams', 'Full exam, Section I, mini exam, unit tests', '#/exam', 'ap exam practice test mcq'],
+   ['✍️', 'FRQ practice', 'All AP CSA free-response questions', '#/frq', 'frq free response'],
+   ['🎯', 'Practice', 'Build a practice set, daily mix, review mistakes', '#/practice', 'quiz practice review'],
+   ['🔄', 'Review my mistakes', 'Retry questions you missed', '#/quiz?mode=review', 'mistakes review'],
+   ['🕹️', 'Arcade', 'Bug Hunt, Speed Round, Duels, Weekly challenge', '#/arcade', 'games bug hunt speed duel'],
+   ['⚔️', '1v1 Duels', 'Duel ByteBot or a squadmate', '#/duel', 'duel versus'],
+   ['📋', 'Assignments', 'Your plan and squad assignments', '#/assignments', 'homework due'],
+   ['👥', 'Squad', 'Leaderboard, duels, question bank', '#/squad', 'friends leaderboard'],
+   ['📝', 'Notes & cheat sheets', 'Search and print notes', '#/notes', 'notes cheat sheet print'],
+   ['📖', 'Glossary', 'Every CS term in plain English', '#/glossary', 'glossary words definitions'],
+   ['💬', 'Feedback', 'Send a suggestion or report a problem', '#/feedback', 'feedback suggestion bug'],
+   ['🎨', 'Settings', 'Themes, colors, fonts, sound', '#/settings', 'theme customize settings'],
+   ['👤', 'Profile & badges', 'Level, badges, stats', '#/profile', 'profile badges'],
+  ].forEach(([i, t, s, h, x]) => add('Page', i, t, s, h, x, 1));
+  for (const g of (window.GLOSSARY || [])) add('Glossary', '🔤', g.term, g.def, `#/glossary?q=${encodeURIComponent(g.term)}`, g.aliases.join(' '), -1);
+  return idx;
+}
+function searchIndex(q) {
+  SEARCH_INDEX = SEARCH_INDEX || buildSearchIndex();
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean); if (!terms.length) return [];
+  const out = [];
+  for (const it of SEARCH_INDEX) {
+    let score = 0, ok = true;
+    for (const t of terms) {
+      if (it.t.includes(t)) score += it.t.startsWith(t) || it.t.includes(' ' + t) ? 12 : 8;
+      else if (it.s.includes(t)) score += 2;
+      else { ok = false; break; }
+    }
+    if (ok) { if (it.t === q.toLowerCase()) score += 20; out.push([score + it.boost, it]); }
+  }
+  return out.sort((a, b) => b[0] - a[0]).slice(0, 40).map(x => x[1]);
+}
+function openSearch(initial = '') {
+  const m = modal(`<div class="search-box"><input class="input" id="sq" type="search" placeholder="Search lessons, practices, units, FRQs, glossary…" value="${esc(initial)}" autocomplete="off" aria-label="Search" autofocus><div id="sr" class="search-results" role="listbox"></div><small class="muted">↑ ↓ to move · Enter to open · Esc to close</small></div>`, { wide: true });
+  m.classList.add('search-modal');
+  const inp = $('#sq', m), box = $('#sr', m); let sel = 0, res = [];
+  const hl = s => { let h = esc(s); for (const t of inp.value.trim().split(/\s+/).filter(Boolean)) h = h.replace(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), x => `<mark>${x}</mark>`); return h; };
+  const draw = () => {
+    const q = inp.value.trim();
+    res = q ? searchIndex(q) : [];
+    if (!q) { const ct = continueTarget(); box.innerHTML = `<div class="muted" style="padding:10px 4px">Try <b>if statements</b>, <b>ArrayList</b>, <b>binary search</b>, <b>FRQ</b> or <b>2D array</b>.</div><a class="sr-item" href="${ct.href}"><span class="sr-ic">▶</span><span><b>Continue: ${esc(ct.label)}</b><small>${esc(ct.c.title)}</small></span></a>`; return; }
+    sel = Math.min(sel, Math.max(0, res.length - 1));
+    box.innerHTML = res.length ? res.map((r, i) => `<a class="sr-item ${i === sel ? 'sel' : ''}" href="${r.href}" role="option" aria-selected="${i === sel}" data-i="${i}"><span class="sr-ic">${r.icon}</span><span style="min-width:0"><b>${hl(r.title)}</b><small>${esc(r.kind)} · ${esc(r.sub.slice(0, 90))}</small></span></a>`).join('') : `<div class="empty">No results for "${esc(q)}".</div>`;
+    $$('.sr-item', box).forEach(a => a.addEventListener('click', () => closeModal()));
+  };
+  inp.oninput = () => { sel = 0; draw(); };
+  inp.onkeydown = e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + res.length) % Math.max(1, res.length); draw(); $('.sr-item.sel', box)?.scrollIntoView({ block: 'nearest' }); }
+    if (e.key === 'Enter') { const r = res[sel]; if (r) { closeModal(); location.hash = r.href.slice(1); } }
+  };
+  draw(); setTimeout(() => inp.focus(), 40);
+}
+document.addEventListener('keydown', e => {
+  if ($('.modal')) return;
+  if ((e.key === '/' && !e.target.matches('input,textarea,select,[contenteditable]')) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) { e.preventDefault(); openSearch(); }
+});
