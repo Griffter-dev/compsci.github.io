@@ -21,22 +21,23 @@ route('/arcade', (view) => {
   });
 });
 function coursePicker(title, cb, bugsOnly) {
-  const opts = [['all', '🌐', 'All courses', bugsOnly ? allQs(['bug']).length : allQs(['quiz', 'trace']).length], ['mine', '🎒', 'My courses', null], ...COURSES.map(c => [c.id, c.emoji, c.title, bugsOnly ? courseQs(c.id, ['bug']).length : courseQs(c.id, ['quiz', 'trace']).length])];
-  const m = modal(`<h3>${esc(title)}: pick a topic</h3><div class="stack" style="margin-top:14px">${opts.map(([id, e, n, k]) => `<button class="btn" style="width:100%;justify-content:space-between" data-c="${id}"><span>${e} ${esc(n)}</span>${k != null ? `<small class="muted">${k} Qs</small>` : ''}</button>`).join('')}</div>`);
+  const opts = [['all', '🌐', 'Everything I\'ve reached', bugsOnly ? allQs(['bug']).length : allQs(['quiz', 'trace']).length], ['mine', '🎒', 'My courses', null], ...COURSES.map(c => [c.id, c.emoji, c.title, bugsOnly ? courseQs(c.id, ['bug']).length : courseQs(c.id, ['quiz', 'trace']).length])];
+  const m = modal(`<h3>${esc(title)}: pick a topic</h3><p class="muted"><small>🔒 Only lessons you've reached are used, so you won't see things you haven't learned yet.</small></p><div class="stack" style="margin-top:14px">${opts.filter(([id, , , k]) => k == null || k > 0).map(([id, e, n, k]) => `<button class="btn" style="width:100%;justify-content:space-between" data-c="${id}"><span>${e} ${esc(n)}</span>${k != null ? `<small class="muted">${k} Qs</small>` : ''}</button>`).join('')}</div>`);
   $$('[data-c]', m).forEach(b => b.onclick = () => { closeModal(); cb(b.dataset.c); });
 }
 function poolFor(cid, types) {
-  if (cid === 'all') return allQs(types);
-  if (cid === 'mine' || cid === 'year') return myCourseIds().flatMap(id => courseQs(id, types));
-  return courseQs(cid, types);
+  if (cid === 'all') return scopeQs(allQs(types));
+  if (cid === 'mine' || cid === 'year') return scopeQs(myCourseIds().flatMap(id => courseQs(id, types)));
+  return scopeQs(courseQs(cid, types));
 }
 function bossPicker() {
-  const m = modal(`<h3>👹 Choose a boss</h3><div class="stack" style="margin-top:12px">${COURSES.map(c => `<div><b>${c.emoji} ${esc(c.title)}</b><div class="row" style="margin-top:6px">${c.units.map(u => `<a class="pill ${S.units[u.id]?.boss ? 'accent' : ''}" href="#/boss/${u.id}">${(BOSSES[u.id] || ['', '🛡️'])[1]} ${esc((BOSSES[u.id] || ['Guardian'])[0])}${S.units[u.id]?.boss ? ' ✓' : ''}</a>`).join('')}</div></div>`).join('')}</div>`, { wide: true });
+  const m = modal(`<h3>👹 Choose a boss</h3><div class="stack" style="margin-top:12px">${COURSES.map(c => `<div><b>${c.emoji} ${esc(c.title)}</b><div class="row" style="margin-top:6px">${c.units.map(u => !isReached(u.id) ? `<span class="pill" style="opacity:.5" title="Reach this module first">🔒 ${esc((BOSSES[u.id] || ['Guardian'])[0])}</span>` : `<a class="pill ${S.units[u.id]?.boss ? 'accent' : ''}" href="#/boss/${u.id}">${(BOSSES[u.id] || ['', '🛡️'])[1]} ${esc((BOSSES[u.id] || ['Guardian'])[0])}${S.units[u.id]?.boss ? ' ✓' : ''}</a>`).join('')}</div></div>`).join('')}</div>`, { wide: true });
   $$('a', m).forEach(a => a.addEventListener('click', () => closeModal()));
 }
 
 route('/bughunt', (view, p) => {
   const pool = shuffle(poolFor(p.course || 'all', ['bug']));
+  if (!pool.length) { view.innerHTML = lockedNote('a course with code challenges'); return; }
   if (EVENT.bugBonus) toast('🐛 Bug Bash week', 'Bug Hunt XP is doubled!');
   runQuiz(view, {
     title: 'Bug Hunt', questions: pool.slice(0, 8), mode: 'bughunt', lives: 3, timeLimit: 120, explain: true, back: '/arcade',
@@ -52,6 +53,7 @@ route('/bughunt', (view, p) => {
 
 route('/speed', (view, p) => {
   const base = poolFor(p.course || 'all', ['quiz', 'trace']);
+  if (!base.length) { view.innerHTML = lockedNote(); return; }
   runQuiz(view, {
     title: 'Speed Round', questions: shuffle(base), endless: true, more: () => shuffle(base), mode: 'speed', timeLimit: 60, timePenalty: 3, explain: false, back: '/arcade', confirmQuit: false,
     scoreFn: (q, ok, ms, st) => ok ? Math.round(10 * (st.combo >= 10 ? 3 : st.combo >= 5 ? 2 : st.combo >= 3 ? 1.5 : 1)) : 0,
@@ -81,6 +83,7 @@ route('/duel', (view, p) => {
 route('/duel/bot', (view, p) => {
   const bot = BOTS[p.level] || BOTS.normal;
   const qs = shuffle(poolFor(p.course || 'mine', ['quiz', 'trace'])).slice(0, 7);
+  if (!qs.length) { view.innerHTML = lockedNote(); return; }
   const bs = { score: 0, idx: 0, last: '' }; let bt = null;
   const extra = st => `<div class="duel-vs"><div class="side-p">${avatarHtml(S.profile, 'sm')}<div style="min-width:0"><div class="nm">${esc(S.profile.name || 'You')}</div><div class="pts">${st.score} pts</div></div></div><span class="vs">VS</span><div class="side-p"><span class="avatar sm" style="border-color:var(--accent2)">${bot.a}</span><div style="min-width:0"><div class="nm">${bot.n}</div><div class="pts" id="bot-pts">${bs.score} pts ${bs.last}</div></div></div></div>`;
   const resolveBot = () => { clearTimeout(bt); if (bs.pending == null) return; const ok = Math.random() < bot.acc; bs.score += duelPoints(ok, bs.pending); bs.last = ok ? '✓' : '✗'; bs.pending = null; updateBot(); };
@@ -101,11 +104,15 @@ route('/duel/bot', (view, p) => {
 
 /* ---------- Weekly challenge ---------- */
 route('/weekly', (view) => {
-  const pool = EVENT.units.flatMap(u => unitQs(u));
+  let pool = scopeQs(EVENT.units.flatMap(u => unitQs(u)));
+  const fromEvent = pool.length >= 5;
+  if (!fromEvent) pool = scopeQs(allQs(['quiz', 'trace', 'bug', 'fill']));
   const qs = shuffle(pool, seeded(EVENT.week)).slice(0, 10);
+  if (!qs.length) { view.innerHTML = lockedNote(); return; }
   const mine = S.weekly[EVENT.week];
   const sq = squadState();
   view.innerHTML = `<div class="wrap narrow"><div class="card" style="text-align:center"><div style="font-size:4rem">${EVENT.emoji}</div><span class="eyebrow">Weekly challenge · ${esc(EVENT.week)}</span><h1 style="font-size:2rem">${esc(EVENT.name)}</h1>
+    ${fromEvent ? '' : `<p class="notice" style="text-align:left"><small>🔒 You haven't reached this week's event modules yet, so your challenge uses lessons you have reached instead.</small></p>`}
     <p class="muted">Everyone gets the same 10 questions this week. Correct answers score 100 points, plus up to 50 for speed. Your best score counts${sq.inSquad ? ' on the squad weekly leaderboard' : ''}.</p>
     <div class="row" style="justify-content:center"><span class="pill">10 questions</span><span class="pill accent">2× XP</span>${mine ? `<span class="pill">Your best: ${mine.best}</span>` : ''}<span class="pill">${daysLeftInWeek()} day${daysLeftInWeek() === 1 ? '' : 's'} left</span></div>
     <div class="row" style="justify-content:center;margin-top:20px"><button class="btn primary lg" id="w-go">${mine ? 'Try again' : 'Start'} →</button>${sq.inSquad ? '<a class="btn lg" href="#/squad?tab=weekly">Squad scores</a>' : ''}</div></div></div>`;

@@ -166,7 +166,7 @@ if (process.env.DUMP_EX) fs.writeFileSync(process.env.DUMP_EX, JSON.stringify(co
 if (errors.length) { console.error('CONTENT ERRORS:\n' + errors.join('\n')); process.exit(1); }
 
 const read = f => fs.readFileSync(path.join(ROOT, 'src', f), 'utf8');
-const jsOrder = ['core.js', 'ui.js', 'glossary.js', 'runner.js', 'engine.js', 'views-learn.js', 'views-study.js', 'views-assign.js', 'views-exam.js', 'views-arcade.js', 'squad.js', 'views-squad.js', 'views-me.js', 'main.js'];
+const jsOrder = ['core.js', 'ui.js', 'glossary.js', 'runner.js', 'engine.js', 'views-learn.js', 'views-study.js', 'views-assign.js', 'views-exam.js', 'views-feedback.js', 'views-arcade.js', 'squad.js', 'views-squad.js', 'views-me.js', 'main.js'];
 const js = jsOrder.map(f => `// ---- ${f} ----\n` + read(f)).join('\n');
 const contentJs = 'window.COURSES = ' + JSON.stringify(courses).replace(/<\/(script)/gi, '<\\/$1') + ';\nwindow.GLOSSARY = ' + JSON.stringify(GLOSSARY) + ';\nwindow.FRQS = ' + JSON.stringify(FRQS).replace(/<\/(script)/gi, '<\\/$1') + ';';
 console.log('glossary terms', GLOSSARY.length, '· frqs', FRQS.length, FRQS.map(f => f.id + ':' + f.parts.reduce((n, p) => n + p.points, 0)).join(' '));

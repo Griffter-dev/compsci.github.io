@@ -446,3 +446,8 @@ dl.gloss{display:grid;gap:10px;margin:0}
 
 .frq>*,.exam-grid>*,.exam>*{min-width:0}
 .frq .prose table{display:block;overflow-x:auto}
+.fb-tab{position:fixed;right:0;top:50%;transform:translateY(-50%) rotate(-90deg);transform-origin:bottom right;z-index:29;background:var(--accent);color:var(--on-accent);font-weight:800;font-size:.85rem;padding:7px 14px;border-radius:10px 10px 0 0;text-decoration:none;box-shadow:var(--shadow);white-space:nowrap;translate:0 -50%}
+.fb-tab:hover{filter:brightness(1.1)}
+@media (max-width:820px){.fb-tab{display:none}}
+.fb-type:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--bg2))}
+.fb-item.done{opacity:.6}

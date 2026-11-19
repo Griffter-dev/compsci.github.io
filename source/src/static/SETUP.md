@@ -68,6 +68,15 @@ This gives each browser a private ID without needing an email.
 2. Click **Copy invite link** and send it to a friend. When they open it and tap **Join**, you should both see each other on the leaderboard within a second or two.
 3. Try a live duel: **Squad → Duels → Create duel**. Your friend taps **Join**.
 
+### 2.6 Read feedback (site owner only)
+Everyone can send suggestions from the **💬 Feedback** tab, and only you can read them:
+1. On your own computer, open the site and go to **Feedback → "Site owner? Open the feedback inbox"**. It shows a long ID.
+2. In the Firebase console, open **Firestore Database** → **Start collection**, and name it `config`.
+3. Set the document ID to `admins`. Add a field named `uids` of type **array**, put the ID from step 1 in it as a string, then click **Save**.
+4. Reload the inbox. You'll see every message, and you can mark each one **done** or delete it.
+
+The ID belongs to that browser. If you clear your browser data or switch devices, add the new ID to the array too.
+
 ---
 
 ## If something doesn't work

@@ -7,6 +7,20 @@ service cloud.firestore {
     function isLeader(sid) { return signedIn() && squad(sid).owner == request.auth.uid; }
     function isMember(sid) { return signedIn() && exists(/databases/$(database)/documents/squads/$(sid)/members/$(request.auth.uid)); }
 
+    // Site owners: add your browser's ID to the "uids" array in config/admins (Firebase console only)
+    function isAdmin() { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/config/admins).data.uids; }
+    match /config/admins {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+    // Feedback: anyone can send it, and only site owners can read it
+    match /feedback/{fid} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.message is string && request.resource.data.message.size() <= 1500
+                    && request.resource.data.status == 'new';
+      allow read, update, delete: if isAdmin();
+    }
+
     match /squads/{sid} {
       allow get: if signedIn();            // you must know the 6-letter code to look a squad up
       allow list: if false;                // nobody can browse all squads

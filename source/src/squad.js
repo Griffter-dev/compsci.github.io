@@ -31,6 +31,7 @@ function fbInit() {
       }), 12000, 'Could not sign in to Firebase (is Anonymous sign-in enabled?)');
       FB.uid = user.uid; FB.f = fsM; FB.db = fsM.getFirestore(app); FB.status = 'ok';
       if (S.squad?.code) { refreshSquadMeta(); writeMember(); startBankSync(); startAssignSync(); }
+      flushFeedbackQueue();
       return true;
     } catch (e) {
       console.warn('Firebase init failed', e); FB.status = 'error'; FB.err = e.code || e.message || String(e); return false;
@@ -139,6 +140,7 @@ async function createLiveDuel(cid) {
   try {
     await fbInit(); if (FB.status !== 'ok') throw new Error('Squad server not reachable');
     const qids = shuffle(poolFor(cid, ['quiz', 'trace'])).slice(0, 7).map(q => q.id);
+    if (qids.length < 3) throw new Error("Reach a few more lessons in this topic first. Duels only use lessons you've reached.");
     const ref = await FB.f.addDoc(fcol(...sqPath(), 'duels'), { host: FB.uid, hostName: S.profile.name || 'Student', hostAvatar: S.profile.avatar, hostColor: S.profile.color, guest: null, guestName: '', guestAvatar: '', guestColor: '', course: cid, qids, seed: genCode(), status: 'open', hs: 0, gs: 0, hi: 0, gi: 0, created: Date.now() });
     go('/live/' + ref.id);
   } catch (e) { toast('Could not create duel', e.message); }
@@ -174,3 +176,24 @@ function startAssignSync() {
 function stopAssignSync() { assignUnsub && assignUnsub(); assignUnsub = null; }
 async function createAssignment(a) { await FB.f.addDoc(fcol(...sqPath(), 'assignments'), { ...a, by: FB.uid, byName: S.profile.name || 'Leader', created: Date.now() }); }
 const deleteAssignment = id => FB.f.deleteDoc(fdoc(...sqPath(), 'assignments', id));
+
+/* ---------- Feedback (anyone can send; only admins listed in config/admins can read) ---------- */
+async function sendFeedback(fb) {
+  await fbInit();
+  if (FB.status !== 'ok') { S.feedbackQueue = [...(S.feedbackQueue || []), fb]; save(); return 'queued'; }
+  await FB.f.addDoc(fcol('feedback'), { ...fb, uid: FB.uid, status: 'new' });
+  return 'sent';
+}
+async function flushFeedbackQueue() {
+  if (FB.status !== 'ok' || !(S.feedbackQueue || []).length) return;
+  const q = S.feedbackQueue.slice(); S.feedbackQueue = []; save();
+  for (const fb of q) { try { await FB.f.addDoc(fcol('feedback'), { ...fb, uid: FB.uid, status: 'new' }); } catch (e) { S.feedbackQueue.push(fb); } }
+  save();
+}
+async function isFeedbackAdmin() {
+  await fbInit(); if (FB.status !== 'ok') return false;
+  try { const s = await FB.f.getDoc(fdoc('config', 'admins')); return s.exists() && (s.data().uids || []).includes(FB.uid); } catch (e) { return false; }
+}
+function subFeedback(cb) { return FB.f.onSnapshot(FB.f.query(fcol('feedback'), FB.f.orderBy('created', 'desc'), FB.f.limit(300)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => cb(null, e)); }
+const updateFeedback = (id, data) => FB.f.updateDoc(fdoc('feedback', id), data);
+const deleteFeedback = id => FB.f.deleteDoc(fdoc('feedback', id));

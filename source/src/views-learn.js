@@ -144,7 +144,7 @@ route('/practice', (view, p) => {
       <label class="toggle" style="border:0"><span>Include squad-written questions</span><span class="switch"><input type="checkbox" id="p-sq" ${S.settings.squadQs ? 'checked' : ''}><span></span></span></label>
       <div class="row" style="justify-content:flex-end"><button class="btn primary lg" id="p-go">Start practice →</button></div>
     </div></div>${footer()}`;
-  const units = () => { const c = COURSE[$('#p-course', view).value]; $('#p-units', view).innerHTML = c.units.map((u, i) => `<label class="pill" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="${u.id}" checked> ${esc(u.title)}</label>`).join(''); };
+  const units = () => { const c = COURSE[$('#p-course', view).value]; $('#p-units', view).innerHTML = c.units.map((u, i) => isReached(u.id) ? `<label class="pill" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="${u.id}" checked> ${esc(u.title)}</label>` : `<span class="pill" style="opacity:.5;padding:6px 12px" title="Reach this module first">🔒 ${esc(u.title)}</span>`).join('') + `<small class="muted" style="flex-basis:100%">🔒 Practice only uses modules you've reached. Start or continue a course to unlock more.</small>`; };
   units(); $('#p-course', view).onchange = units;
   $('#p-sq', view).onchange = e => { S.settings.squadQs = e.target.checked; save(); };
   $('#p-go', view).onclick = () => {
@@ -168,6 +168,10 @@ route('/quiz', (view, p) => {
   else if (p.units) { pool = p.units.split(',').flatMap(u => unitQs(u, types)); title = p.mode === 'unit' ? `${UNIT[p.units]?.title || 'Unit'} · ${types.includes('quiz') ? 'Quiz' : 'Code challenges'}` : 'Practice set'; if (p.mode === 'unit') back = `/course/${UNIT[p.units]?.course}`; }
   else if (p.course) { pool = courseQs(p.course, types); title = COURSE[p.course]?.title + ' quiz'; back = `/course/${p.course}`; }
   else pool = allQs(types);
+  // games & practice only use modules you've reached (module quizzes and your own mistakes are exempt)
+  const scoped = p.mode !== 'unit' && p.mode !== 'review';
+  if (scoped) pool = scopeQs(pool);
+  if (scoped && !pool.length) { view.innerHTML = lockedNote(p.course ? COURSE[p.course]?.title : 'any course'); return; }
   if (S.settings.squadQs && p.mode === 'practice' && p.units) pool.push(...squadBankQs().filter(q => p.units.split(',').includes(q.unit)));
   const n = +p.n || (p.mode === 'unit' ? 999 : 10);
   if (p.mode === 'unit' && p.n) back = `/learn/${p.units}/0`;
@@ -192,6 +196,7 @@ const BOSSES = { py1: ['Type Error Troll', '👺'], py2: ['The Elif Hydra', '�
 route('/boss/:uid', (view, p) => {
   const u = UNIT[p.uid]; if (!u) return;
   const [name, face] = BOSSES[u.id] || ['Unit Guardian', '🛡️'];
+  if (!isReached(u.id)) { view.innerHTML = `<div class="wrap narrow"><div class="card empty"><span class="big">🔒</span><h2>${esc((BOSSES[u.id] || ['This boss'])[0])} is locked</h2><p>Reach <b>${esc(u.title)}</b> first. Boss battles only use lessons you've already learned.</p><button class="btn primary" onclick="startAt('${u.course}','${u.id}')">Start this module</button></div></div>`; return; }
   const pool = shuffle(unitQs(u.id));
   const need = Math.min(8, Math.max(4, pool.length - 3));
   const beaten = S.units[u.id]?.boss;

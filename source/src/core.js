@@ -214,6 +214,25 @@ function nextInCourse(c) {
   for (const u of unitsFromStart(c)) { const it = unitItems(u).find(x => !itemDoneAt(x)); if (it) return { c, u, it }; }
   return null;
 }
+/* ---------- "Reached" scope: games & practice only use modules you've reached ----------
+   A module counts as reached if you've finished anything in it, it's the module you're on now,
+   or it comes before the furthest module you've reached (including the module you chose to start on). */
+function reachedUnits(c) {
+  const started = c.units.findIndex(u => u.id === S.start[c.id]);
+  let max = Math.max(started, ...c.units.map((u, i) => unitItems(u).some(itemDoneAt) || S.units[u.id]?.quizAt || S.units[u.id]?.boss ? i : -1));
+  if (max < 0) return [];
+  const nx = nextInCourse(c); if (nx) max = Math.max(max, c.units.indexOf(nx.u));
+  return c.units.slice(0, max + 1).map(u => u.id);
+}
+function reachedSet() {
+  const ids = COURSES.flatMap(reachedUnits);
+  if (!ids.length) { const c = COURSE[myCourseIds()[0]] || COURSES[0]; ids.push((c.units.find(u => u.id === S.start[c.id]) || c.units[0]).id); }  // brand new: the module you're on
+  return new Set(ids);
+}
+const isReached = uid => reachedSet().has(uid);
+const scopeQs = qs => { const r = reachedSet(); return qs.filter(q => r.has(q.unit)); };
+function lockedNote(what = 'any course') { return `<div class="wrap narrow"><div class="card empty"><span class="big">🔒</span><h2>Nothing to play here yet</h2><p>Games and practice only use lessons you've reached, so you won't get questions on things you haven't learned. Finish a lesson in ${esc(what)} to unlock questions.</p><a class="btn primary" href="${continueTarget().href}">Continue learning →</a></div></div>`; }
+
 function continueTarget() {
   const recent = [...Object.entries(S.lessons).map(([k, t]) => [UNIT[k.split(':')[0]]?.course, t]), ...Object.entries(S.exercises).map(([k, v]) => [EX[k]?.course, v.at]), ...Object.entries(S.fills).map(([k, v]) => [Q[k]?.course, v.at])].filter(x => x[0]).sort((a, b) => b[1] - a[1]);
   const order = [...new Set([...(recent.length ? [recent[0][0]] : []), ...Object.keys(S.start).filter(id => COURSE[id]), ...myCourseIds()])];

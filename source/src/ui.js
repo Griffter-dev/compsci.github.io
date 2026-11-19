@@ -127,12 +127,26 @@ function renderChrome() {
     </div>`;
   $('#tabbar').innerHTML = NAV.map(([h, n, i]) => `<a href="#${h}" class="${active(h) ? 'on' : ''}"><span class="i">${i}${h === '/assignments' && due ? `<span class="tbadge">${due}</span>` : ''}</span>${n}</a>`).join('');
   $('#me-btn').onclick = e => { e.stopPropagation(); toggleMenu(); };
+  let tab = $('#fb-tab'); if (!tab) { tab = document.createElement('a'); tab.id = 'fb-tab'; tab.className = 'fb-tab noprint'; tab.innerHTML = '💬 Feedback'; document.body.appendChild(tab); }
+  tab.classList.toggle('hidden', p.startsWith('/feedback') || p.startsWith('/exam/run'));
+  tab.href = `#/feedback?from=${encodeURIComponent(pageLabel())}`;
+}
+// a friendly name for the current page (sent along with feedback)
+function pageLabel() {
+  const p = (location.hash.slice(1) || '/').split('?')[0].split('/').filter(Boolean);
+  try {
+    if (p[0] === 'learn' && UNIT[p[1]]) { const u = UNIT[p[1]]; return `${COURSE[u.course].title} › ${u.lessons[+p[2]]?.title || u.title}`; }
+    if (p[0] === 'ex') { const it = EX[p[1]] || Q[p[1]]; return it ? `${COURSE[it.course].title} › ${it.title}` : ''; }
+    if (p[0] === 'course' && COURSE[p[1]]) return COURSE[p[1]].title;
+    if (p[0] === 'frq') return 'FRQ practice' + (p[1] ? ' › ' + ((window.FRQS || []).find(f => f.id === p[1])?.title || '') : '');
+    return p[0] ? p[0][0].toUpperCase() + p[0].slice(1) : 'Home';
+  } catch (e) { return ''; }
 }
 function toggleMenu() {
   const ex = $('.menu'); if (ex) { ex.remove(); return; }
   const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'menu');
   m.innerHTML = `<div style="padding:8px 12px"><b>${esc(S.profile.name || 'Student')}</b><br><small>${esc(myTitle())} · Level ${levelFor(S.xp)}</small></div><hr>
-    <a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/notes" role="menuitem">📝 Notes & cheat sheets</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>`;
+    <a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/notes" role="menuitem">📝 Notes & cheat sheets</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/feedback" role="menuitem">💬 Feedback</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>`;
   document.body.appendChild(m);
   $('a', m).focus();
   const off = e => { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('click', off); } };
@@ -141,5 +155,5 @@ function toggleMenu() {
 }
 function footer() {
   return `<footer class="footer"><div class="cols"><div><b class="mono">Compci<span style="color:var(--accent)">Study</span></b><br>Made by students, for students. Free forever.</div>
-  <div><a href="#/courses">Courses</a><a href="#/assignments">Assignments</a><a href="#/arcade">Arcade</a><a href="#/squad">Squad</a><a href="#/notes">Notes</a><a href="#/glossary">Glossary</a><a href="#/help">Help & FAQ</a><a href="#/settings">Settings</a></div></div></footer>`;
+  <div><a href="#/courses">Courses</a><a href="#/assignments">Assignments</a><a href="#/arcade">Arcade</a><a href="#/squad">Squad</a><a href="#/notes">Notes</a><a href="#/glossary">Glossary</a><a href="#/feedback">Feedback</a><a href="#/help">Help & FAQ</a><a href="#/settings">Settings</a></div></div></footer>`;
 }
