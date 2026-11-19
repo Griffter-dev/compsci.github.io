@@ -5,7 +5,7 @@ const PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.26.1/full/';
 function mountEditor(host, { code = '', lang = 'python', onChange } = {}) {
   host.innerHTML = `<div class="editor" data-lang="${esc(lang)}"><div class="ed-scroll"><div class="ed-gutter" aria-hidden="true"></div><div class="ed-inner"><pre class="ed-hl" aria-hidden="true"><code></code></pre><textarea class="ed-ta" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Code editor. Press Escape then Tab to leave the editor."></textarea></div></div></div>`;
   const ta = $('.ed-ta', host), hl = $('.ed-hl code', host), gut = $('.ed-gutter', host);
-  const indent = lang === 'python' || lang === 'java' ? '    ' : '  ';
+  const indent = lang === 'python' || lang === 'java' || lang === 'luau' ? '    ' : '  ';
   let escaped = false;
   const paint = () => {
     hl.innerHTML = highlight(ta.value, lang) + '\n ';
@@ -31,7 +31,7 @@ function mountEditor(host, { code = '', lang = 'python', onChange } = {}) {
       const { selectionStart: s, value: v } = ta;
       const line = v.slice(v.lastIndexOf('\n', s - 1) + 1, s);
       let ind = line.match(/^\s*/)[0];
-      if (/[:{\[(]\s*$/.test(line)) ind += indent;
+      if (/[:{\[(]\s*$/.test(line) || (lang === 'luau' && /(\bthen|\bdo|\belse|\brepeat|\bfunction\b.*\))\s*$/.test(line))) ind += indent;
       ta.setRangeText('\n' + ind, s, ta.selectionEnd, 'end');
       ta.dispatchEvent(new Event('input'));
     }
@@ -138,6 +138,26 @@ function runHtml(frame, code, tests = []) {
 
 /* ---------- Friendly error explanations ---------- */
 const ERR_HELP = [
+  [/attempt to index nil with '(\w+)'/, "You tried to use <code>.$1</code> on something that is <b>nil</b> (it doesn't exist). Check the name before the dot: is it spelled right, and does that object exist yet? <code>FindFirstChild</code> gives back nil when it can't find a child."],
+  [/(\w+) is not a valid member of (\w+)/, "There is no <code>$1</code> on this $2. Check the spelling and capital letters (Roblox names are case-sensitive), and make sure the object was created and parented first."],
+  [/attempt to call a nil value \((?:global|field|method) '(\w+)'\)/, "<code>$1</code> doesn't exist, so it can't be called. Check the spelling and capitals (Luau built-ins are lowercase, like <code>print</code>), and make sure a local function is defined <b>above</b> the line that calls it."],
+  [/attempt to call a nil value/, "You called something that doesn't exist (nil). Check the function's name, and that it is defined before you call it."],
+  [/attempt to perform arithmetic .*on string/, "You're doing math with text. Use <code>tonumber()</code> to turn text into a number, or <code>..</code> to join text together."],
+  [/attempt to perform arithmetic .*nil/, "One side of the math is <b>nil</b>. A variable probably doesn't have a value yet, or a name is misspelled."],
+  [/attempt to concatenate/, "<code>..</code> only joins text and numbers. Wrap other values in <code>tostring()</code>, and check that nothing is nil."],
+  [/attempt to compare/, "You can only use &lt; and &gt; on two numbers or two strings. Check the type of each side."],
+  [/Script timeout|exhausted allowed execution time/, "A loop ran forever without pausing, so the game stopped it. Put <code>task.wait()</code> inside every <code>while true do</code> loop."],
+  [/to close the|Expected 'end'/, "A block is missing its <code>end</code>. Every <code>if</code>, <code>for</code>, <code>while</code> and <code>function</code> needs a matching <code>end</code>. Lining up your indentation makes it easy to spot."],
+  [/Expected 'then'/, "An <code>if</code> line must end with <code>then</code>. To compare two values use <code>==</code>, not <code>=</code>."],
+  [/Expected 'do'/, "Loop headers end with <code>do</code>: <code>for i = 1, 10 do</code> or <code>while x &lt; 5 do</code>."],
+  [/Unable to assign property (\w+)\. (\w+)/, "<code>$1</code> needs a <b>$2</b> value. For example, Position needs <code>Vector3.new(x, y, z)</code>, Color needs <code>Color3.fromRGB(r, g, b)</code> and Anchored needs <code>true</code> or <code>false</code>."],
+  [/Infinite yield possible/, "<code>WaitForChild</code> has been waiting a long time. Check that the child's name is spelled exactly right."],
+  [/Attempt to connect failed/, "<code>:Connect()</code> needs a function. Write <code>:Connect(onTouched)</code> with no <code>()</code> after the name, or put <code>function(...) ... end</code> inside."],
+  [/Expected ':' not '\.'/, "Methods use a colon: <code>part:Destroy()</code>, not <code>part.Destroy()</code>."],
+  [/stack overflow/, "A function keeps calling itself forever. Add or fix the base case."],
+  [/Unable to create an Instance of type/, "That class name doesn't exist. Check the spelling and capitals, like <code>Instance.new(\"Part\")</code>."],
+  [/can only be called from the (client|server)/, "This only works on the <b>$1</b>. Server code goes in a Script; client code goes in a LocalScript."],
+  [/Luau uses|Incomplete statement|Expected identifier|malformed number|unfinished string|Expected '/, "Luau couldn't read this line. Look for a typo, or a missing <code>end</code>, <code>then</code>, <code>do</code>, bracket or quote mark."],
   [/expected ':'/, "Lines that start with <code>if</code>, <code>elif</code>, <code>else</code>, <code>for</code>, <code>while</code> or <code>def</code> must end with a colon <code>:</code>."],
   [/IndentationError: expected an indented block/, "After a line that ends in a colon, the next line must be indented (4 spaces)."],
   [/IndentationError: unexpected indent/, "This line is indented but shouldn't be. Line it up with the code around it."],
@@ -162,6 +182,7 @@ const ERR_HELP = [
   [/Unexpected token|Unexpected end of input/, "JavaScript found something it didn't expect. Look for a missing <code>)</code>, <code>}</code> or quote."],
   [/Timed out/, "Your code ran too long. Check that every loop has a way to stop: does the condition ever become False?"],
 ];
+window.explainLuauError = e => explainError(e);
 function explainError(err) {
   if (!err) return '';
   for (const [re, msg] of ERR_HELP) { const m = err.match(re); if (m) return `<div class="err-help">💡 <b>What this means:</b> ${msg.replace(/\$(\d)/g, (_, i) => esc(m[+i] || ''))}<br><small class="muted">Errors are normal. Every programmer sees them all day. Read the line number, fix it, and run again!</small></div>`; }
@@ -169,6 +190,11 @@ function explainError(err) {
 }
 /* ---------- Runnable examples inside lessons ---------- */
 function mountExample(host, code, lang) {
+  if (lang === 'luau' && window.LuauUI) {
+    const st = LuauUI.mountExample(host, code, lang, { visual: host.dataset.visual === '1', setup: host.dataset.setup || null, mountEditor, onRun: () => { const k = 'ex:' + location.hash; if (!S.answers[k]) { S.answers[k] = { c: 1, w: 0 }; addXP(2, 'Ran an example'); } } });
+    onLeave(() => st.destroy());
+    return;
+  }
   host.className = 'example';
   host.innerHTML = `<div class="exm-head"><span class="mono">▶ Try it · ${esc(LANG_LABEL[lang] || lang)}</span><div class="row" style="gap:6px"><button class="btn sm ghost" data-reset title="Reset the example">↺ Reset</button><button class="btn sm primary" data-run title="Ctrl+Enter">▶ Run</button></div></div><div class="exm-ed"></div><pre class="console exm-out" aria-live="polite"><span class="muted">Press Run, then change the code and run it again!</span></pre>`;
   const ed = mountEditor($('.exm-ed', host), { code, lang });

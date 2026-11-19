@@ -164,6 +164,11 @@ for (const f of fs.readdirSync(path.join(ROOT, 'content')).filter(f => /glossary
   }
 }
 const courses = files.map(f => parseCourse(fs.readFileSync(path.join(ROOT, 'content', f), 'utf8'), f)).filter(Boolean);
+// Roblox Game Coding (Luau) course, kept as prebuilt JSON; goes right after Web Development
+const LUAU_JSON = path.join(ROOT, 'content', 'luau-course.json');
+if (fs.existsSync(LUAU_JSON)) { const lc = JSON.parse(fs.readFileSync(LUAU_JSON, 'utf8')); const wi = courses.findIndex(c => c.id === 'web'); courses.splice(wi + 1, 0, lc); }
+const LUAU_GLOSS = path.join(ROOT, 'content', 'luau-glossary.json');
+if (fs.existsSync(LUAU_GLOSS)) GLOSSARY.push(...JSON.parse(fs.readFileSync(LUAU_GLOSS, 'utf8')));
 
 // stats
 let nL = 0, nQ = 0, nT = 0, nB = 0, nU = 0, nE = 0, nF = 0;
@@ -174,12 +179,12 @@ if (process.env.DUMP_EX) fs.writeFileSync(process.env.DUMP_EX, JSON.stringify(co
 if (errors.length) { console.error('CONTENT ERRORS:\n' + errors.join('\n')); process.exit(1); }
 
 const read = f => fs.readFileSync(path.join(ROOT, 'src', f), 'utf8');
-const jsOrder = ['core.js', 'ui.js', 'glossary.js', 'runner.js', 'engine.js', 'views-learn.js', 'views-study.js', 'views-assign.js', 'views-exam.js', 'views-feedback.js', 'views-arcade.js', 'squad.js', 'views-squad.js', 'views-me.js', 'main.js'];
+const jsOrder = ['luau-engine.js', 'core.js', 'ui.js', 'glossary.js', 'runner.js', 'engine.js', 'views-learn.js', 'views-study.js', 'views-assign.js', 'views-exam.js', 'views-feedback.js', 'views-arcade.js', 'squad.js', 'views-squad.js', 'views-me.js', 'main.js'];
 const js = jsOrder.map(f => `// ---- ${f} ----\n` + read(f)).join('\n');
 const contentJs = 'window.COURSES = ' + JSON.stringify(courses).replace(/<\/(script)/gi, '<\\/$1') + ';\nwindow.GLOSSARY = ' + JSON.stringify(GLOSSARY) + ';\nwindow.FRQS = ' + JSON.stringify(FRQS).replace(/<\/(script)/gi, '<\\/$1') + ';';
 console.log('glossary terms', GLOSSARY.length, '· frqs', FRQS.length, FRQS.map(f => f.id + ':' + f.parts.reduce((n, p) => n + p.points, 0)).join(' '));
 let html = read('index.html')
-  .replace('/*__CSS__*/', () => read('styles.css'))
+  .replace('/*__CSS__*/', () => read('styles.css') + '\n' + read('luau.css'))
   .replace('/*__CONTENT__*/', () => contentJs)
   .replace('/*__APP__*/', () => js.replace(/<\/(script)/gi, '<\\/$1'));
 fs.mkdirSync(OUT, { recursive: true });

@@ -105,7 +105,8 @@ route('/ex/:id', (view, p) => {
     <div class="spread"><div class="row" style="gap:10px"><span class="pill">${kindLabel}</span>${done ? '<span class="pill accent">✓ Completed</span>' : ''}</div>${assignBtn({ course: c.id, unit: u.id, kind: e ? 'ex' : 'fill', ref: item.id })}</div>`;
   if (f) return fillView(view, f, u, c, head, prev);
   const draft = S.drafts[e.id] ?? S.exercises[e.id]?.code ?? e.starter;
-  const runnable = e.lang === 'python' || e.lang === 'js';
+  const isLuau = e.lang === 'luau';
+  const runnable = e.lang === 'python' || e.lang === 'js' || isLuau;
   view.innerHTML = `<div class="viewer ex-viewer">${moduleSidebar(c, e.id, u.id)}
     <div class="ex-wrap">${head(`💻 Coding exercise · ${LANG_LABEL[e.lang] || e.lang}`, !!S.exercises[e.id])}
       <div class="ex-grid">
@@ -120,19 +121,22 @@ route('/ex/:id', (view, p) => {
           <div class="lesson-nav">${prev ? `<a class="btn" href="${prev.href}">← Previous</a>` : '<span></span>'}<button class="btn" id="ex-next">${S.exercises[e.id] ? 'Next →' : 'Skip for now →'}</button></div>
         </section>
         <section class="ex-right">
-          <div class="ex-bar"><span class="mono muted" style="font-size:.8rem">${e.lang === 'html' ? 'index.html' : e.lang === 'js' ? 'main.js' : 'main.py'}</span><div class="row" style="gap:8px">
+          <div class="ex-bar"><span class="mono muted" style="font-size:.8rem">${e.lang === 'html' ? 'index.html' : e.lang === 'js' ? 'main.js' : isLuau ? '📜 Script.luau' : 'main.py'}</span><div class="row" style="gap:8px">
             <button class="btn sm ghost" id="reset" title="Reset to starter code">↺ Reset</button>
             ${e.lang !== 'html' ? '<button class="btn sm" id="run" title="Ctrl+Enter">▶ Run</button>' : '<button class="btn sm" id="run">▶ Preview</button>'}
             <button class="btn sm primary" id="test">✓ Run tests</button></div></div>
           <div id="ed"></div>
           ${e.lang === 'python' ? `<details class="stdin"><summary>Program input (for <code>input()</code>)</summary><textarea class="input" id="stdin" rows="2" placeholder="One line per input() call"></textarea></details>` : ''}
+          ${isLuau && e.visual ? '<div class="ex-label">Game</div><div id="world" class="ex-world"></div>' : ''}
           ${e.lang === 'html' ? '<div class="ex-label">Preview</div><iframe class="preview" id="frame" sandbox="allow-scripts allow-same-origin" title="Preview of your page"></iframe>' : ''}
-          <div class="ex-label">Output</div><pre class="console" id="out" aria-live="polite">${runnable ? 'Press ▶ Run to see what your code prints.' : 'Press ✓ Run tests to check your page.'}</pre>
+          <div class="ex-label">Output</div><pre class="console${isLuau ? ' lx-out' : ''}" id="out" aria-live="polite">${isLuau && e.visual ? 'Press ▶ Run to play your game. Press ✓ Run tests to check it.' : runnable ? 'Press ▶ Run to see what your code prints.' : 'Press ✓ Run tests to check your page.'}</pre>
         </section>
       </div></div></div>`;
   wireSidebar(view); linkGlossary($('#goal', view));
   const ed = mountEditor($('#ed', view), { code: draft, lang: e.lang === 'js' ? 'js' : e.lang, onChange: v => { S.drafts[e.id] = v; save(); } });
   const out = $('#out', view);
+  const lx = isLuau && window.LuauUI ? new LuauUI.Stage(e.visual ? $('#world', view) : document.createElement('div'), { mode: e.visual ? 'world' : 'console', consoleEl: out, setup: e.setup || null, height: 320 }) : null;
+  if (lx) onLeave(() => lx.destroy());
   let fails = 0;
   const show = (r, mode) => {
     const lines = [];
@@ -145,13 +149,14 @@ route('/ex/:id', (view, p) => {
   const busy = on => $$('#run, #test', view).forEach(b => b.disabled = on);
   $('#ed', view).addEventListener('run', () => $('#run', view)?.click());
   $('#run', view).onclick = async () => {
+    if (lx) { lx.run(ed.value); return; }
     busy(true); status('running');
     const r = e.lang === 'html' ? await runHtml($('#frame', view), ed.value, []) : await runCode(e.lang, ed.value, { stdin: $('#stdin', view)?.value || '', onStatus: status });
     show(r, 'run'); busy(false);
   };
   $('#test', view).onclick = async () => {
-    busy(true); status('running');
-    const r = e.lang === 'html' ? await runHtml($('#frame', view), ed.value, e.tests) : await runCode(e.lang, ed.value, { tests: e.tests, stdin: $('#stdin', view)?.value || '', onStatus: status });
+    busy(true); status('running'); if (lx) { lx.stop(); await new Promise(r => setTimeout(r, 30)); }
+    const r = e.lang === 'html' ? await runHtml($('#frame', view), ed.value, e.tests) : isLuau ? LuauUI.runTests(ed.value, e.tests, { mode: e.testMode, setup: e.setup, settle: e.settle, testTime: e.testTime }) : await runCode(e.lang, ed.value, { tests: e.tests, stdin: $('#stdin', view)?.value || '', onStatus: status });
     show(r, 'test'); busy(false);
     const res = (r.res || []).map(x => r.err && !x[0] && !r.timeout ? [false, 'Your code has an error. Fix it first (see Output).'] : x);
     $$('#tests li', view).forEach((li, i) => { const [ok, msg] = res[i] || [false, '']; li.className = ok ? 'pass' : 'fail'; $('.ti', li).textContent = ok ? '✓' : '✗'; li.title = msg; let m = $('.tm', li); if (!ok && msg && msg !== testLabel(e.tests[i], e.lang)) { if (!m) { m = document.createElement('small'); m.className = 'tm'; li.appendChild(m); } m.textContent = msg; } else m?.remove(); });

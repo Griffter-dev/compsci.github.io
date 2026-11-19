@@ -32,6 +32,7 @@ const avatarHtml = (p, cls = '') => `<span class="avatar ${cls}" style="backgrou
 
 /* ---------- Syntax highlighting (tiny, dependency-free) ---------- */
 const KW = {
+  luau: 'and break do else elseif end false for function if in local nil not or repeat return then true until while continue self',
   python: 'def return if elif else for while in range not and or True False None import from class print len break continue pass lambda with as is try except self',
   java: 'public private protected static void int double boolean char long String new return if else for while do class final this null true false import throws extends implements ArrayList Integer Double',
   js: 'let const var function return if else for of in while do true false null undefined new class this console document typeof async await',
@@ -45,7 +46,7 @@ function highlight(code, lang) {
   if (lang === 'html') return esc(code).replace(/(&lt;!--[\s\S]*?--&gt;)|(&lt;\/?)([a-zA-Z][\w-]*)|(\s)([a-z-]+)(=)(&quot;[^&]*?&quot;|"[^"]*")/g,
     (m, c, lt, tag, sp, attr, eq, val) => c ? `<span class="tk-c">${c}</span>` : lt ? `${lt}<span class="tk-t">${tag}</span>` : `${sp}<span class="tk-f">${attr}</span>${eq}<span class="tk-s">${val}</span>`);
   const kws = new Set((KW[lang] || '').split(' ').filter(Boolean));
-  const com = lang === 'python' || lang === 'bash' ? '#.*' : lang === 'css' ? '\\/\\*[\\s\\S]*?\\*\\/' : lang === 'sql' ? '--.*' : '\\/\\/.*|\\/\\*[\\s\\S]*?\\*\\/';
+  const com = lang === 'luau' ? '--\\[\\[[\\s\\S]*?\\]\\]|--.*' : lang === 'python' || lang === 'bash' ? '#.*' : lang === 'css' ? '\\/\\*[\\s\\S]*?\\*\\/' : lang === 'sql' ? '--.*' : '\\/\\/.*|\\/\\*[\\s\\S]*?\\*\\/';
   const re = new RegExp(`(${com})|("(?:[^"\\\\\\n]|\\\\.)*"|'(?:[^'\\\\\\n]|\\\\.)*'|\`[^\`]*\`)|(\\b\\d+(?:\\.\\d+)?\\b)|([A-Za-z_][A-Za-z0-9_]*)(?=\\s*\\()?|([A-Za-z_][A-Za-z0-9_]*)`, 'g');
   let out = '', last = 0, m;
   while ((m = re.exec(code))) {
@@ -56,12 +57,12 @@ function highlight(code, lang) {
     else if (n) out += `<span class="tk-n">${esc(n)}</span>`;
     else if (kws.has(all)) out += `<span class="tk-k">${esc(all)}</span>`;
     else if (w && /^\s*\(/.test(code.slice(last))) out += `<span class="tk-f">${esc(all)}</span>`;
-    else if (lang === 'java' && /^[A-Z]/.test(all)) out += `<span class="tk-t">${esc(all)}</span>`;
+    else if ((lang === 'java' || lang === 'luau') && /^[A-Z]/.test(all)) out += `<span class="tk-t">${esc(all)}</span>`;
     else out += esc(all);
   }
   return out + esc(code.slice(last));
 }
-const LANG_LABEL = { python: 'python', java: 'java', js: 'javascript', javascript: 'javascript', html: 'html', css: 'css', pseudo: 'AP pseudocode', bash: 'terminal', sql: 'sql', text: 'text', '': 'text' };
+const LANG_LABEL = { luau: 'luau', python: 'python', java: 'java', js: 'javascript', javascript: 'javascript', html: 'html', css: 'css', pseudo: 'AP pseudocode', bash: 'terminal', sql: 'sql', text: 'text', '': 'text' };
 /* Question body below the stem: code, call table, I/II/III options, then the ask line (AP-quiz-sheet style). */
 function qExtra(q) {
   let h = q.code ? codeBlock(q.code, q.lang, false) : '';
@@ -77,11 +78,13 @@ function codeBlock(code, lang, copy = true) {
 }
 // upgrade marked-rendered <pre><code class="language-x"> blocks
 function enhanceCode(root) {
+  let luauSetup = null;
   $$('pre:not(.ed-hl):not(.console):not(.code) > code', root).forEach(el => {
     const pre = el.parentElement; if (pre.classList.contains('code')) return;
     const lang = (el.className.match(/language-([\w-]+)/) || [])[1] || 'text';
     const code = el.textContent.replace(/\n$/, '');
-    if (/-(run|visual)$/.test(lang)) { const host = document.createElement('div'); pre.replaceWith(host); mountExample(host, code, lang.replace(/-(run|visual)$/, '').replace('javascript', 'js')); return; }
+    if (lang === 'luau-setup') { luauSetup = code; pre.remove(); return; }
+    if (/-(run|visual)$/.test(lang)) { const host = document.createElement('div'); pre.replaceWith(host); if (lang.startsWith('luau')) { host.dataset.visual = /-visual$/.test(lang) ? '1' : ''; if (luauSetup) { host.dataset.setup = luauSetup; luauSetup = null; } } mountExample(host, code, lang.replace(/-(run|visual)$/, '').replace('javascript', 'js')); return; }
     const tmp = document.createElement('div'); tmp.innerHTML = codeBlock(code, lang);
     pre.replaceWith(tmp.firstChild);
   });

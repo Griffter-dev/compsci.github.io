@@ -104,7 +104,7 @@ route('/courses', (view, p) => {
   const y = p.year === 'mine' ? 'mine' : (+p.year || 0);
   view.innerHTML = `<div class="wrap"><span class="eyebrow">// courses</span><h1 style="font-size:2.2rem">Courses</h1><p class="muted">Pick any course. Your progress in each one is saved.</p>
     <div class="tabs" role="tablist">${[[0, 'All'], ...((S.profile.courses || []).length ? [['mine', 'My courses']] : []), ...YEARS].map(([v, l]) => `<button role="tab" class="${y === v ? 'on' : ''}" onclick="go('/courses${v ? '?year=' + v : ''}')">${l}</button>`).join('')}</div>
-    <div class="grid g3">${COURSES.filter(c => !y || (y === 'mine' ? takingCourse(c.id) : false) || c.year === y || (c.id === 'web' && y === 2) || (c.id === 'cyber' && y === 4)).map(courseCard).join('')}</div></div>${footer()}`;
+    <div class="grid g3">${COURSES.filter(c => !y || (y === 'mine' ? takingCourse(c.id) : false) || c.year === y || (c.id === 'web' && y === 2) || (c.id === 'cyber' && y === 4) || c.id === 'luau').map(courseCard).join('')}</div></div>${footer()}`;
 });
 
 route('/course/:id', (view, p) => {
@@ -250,6 +250,7 @@ route('/notes', (view, p) => {
   inp.oninput = doSearch; doSearch(); inp.focus();
 });
 route('/cheatsheet/:id', (view, p) => {
+  if (COURSE[p.id] && COURSE[p.id].cheatsheet) { const cc = COURSE[p.id]; view.innerHTML = `<div class="wrap"><div class="spread noprint"><a href="#/course/${cc.id}">← ${esc(cc.title)}</a><button class="btn primary" onclick="print()">🖨 Print / Save as PDF</button></div><h1 style="font-size:2rem;margin-top:16px">${cc.emoji} ${esc(cc.title)}: cheat sheet</h1>${cc.cheatsheet}</div>`; return; }
   const c = COURSE[p.id], u = UNIT[p.id];
   const units = c ? c.units : u ? [u] : []; if (!units.length) return;
   const course = c || COURSE[u.course];
