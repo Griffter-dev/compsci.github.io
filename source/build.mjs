@@ -189,6 +189,18 @@ if (fs.existsSync(CN_DIR)) for (const f of fs.readdirSync(CN_DIR).filter(f => f.
 }
 console.log('class notes', CLASS_NOTES.length, CLASS_NOTES.map(n => n.id + ':' + n.questions.length + 'q').join(' '));
 
+
+// ---- Class Notes lock: the owner asked that this tab never change unless they say so (see CLAUDE.md) ----
+{
+  const need = [
+    ['src/ui.js', "['/class-notes', 'Class Notes', '🗒️']"],
+    ['src/views-notes.js', "route('/class-notes/inbox'"],
+    ['src/views-notes.js', "route('/class-notes/:uid'"],
+    ['src/squad.js', 'function sendNoteSuggestion'],
+  ];
+  for (const [f, txt] of need) if (!fs.readFileSync(new URL(f, import.meta.url), 'utf8').includes(txt)) throw new Error(`Class Notes lock: ${f} is missing ${txt}. The Class Notes tab must not be changed or removed without the owner's OK (see CLAUDE.md).`);
+  if (/route\('\/notes',\s*\(view,\s*p\)\s*=>\s*\{\s*view\.innerHTML/.test(fs.readFileSync(new URL('src/views-learn.js', import.meta.url), 'utf8'))) throw new Error('Class Notes lock: the old Notes page came back in views-learn.js (see CLAUDE.md).');
+}
 // stats
 let nL = 0, nQ = 0, nT = 0, nB = 0, nU = 0, nE = 0, nF = 0;
 for (const c of courses) for (const u of c.units) { nU++; nL += u.lessons.length; nQ += u.quiz.length; nT += u.trace.length; nB += u.bug.length; nE += u.ex.length; nF += u.fill.length; }
