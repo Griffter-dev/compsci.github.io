@@ -2,6 +2,19 @@
 const AVATARS = ['🦊', '🐼', '🐸', '🐙', '🦉', '🐧', '🦄', '🐲', '🐺', '🦁', '🐯', '🐨', '🐵', '🦖', '🐢', '🦈', '🐝', '🦋', '👾', '🤖', '👻', '💀', '🧙', '🥷', '🧑‍💻', '🦸', '🧠', '⚡', '🔥', '🌙', '⭐', '🍕', '🌮', '🍩', '🎮', '🎧', '🛹', '⚽', '🏀', '🎸'];
 const COLORS = ['#7c3aed', '#2563eb', '#0891b2', '#16a34a', '#65a30d', '#ca8a04', '#ea580c', '#dc2626', '#db2777', '#9333ea', '#475569', '#0f766e'];
 
+function accountCard() {
+  if (!signedIn()) return `<div class="card acct-card" style="margin-top:16px"><div class="spread"><div><b>🔐 Not signed in</b><br><small class="muted">Your progress is only saved in this browser. Sign in to save it to your account and use squads.</small></div><button class="btn primary" data-acct="in">Sign in</button></div></div>`;
+  return `<div class="card acct-card" style="margin-top:16px"><div class="spread"><div><small class="muted">Signed in as</small><br><b class="mono">${esc(ACC.email)}</b> ${ACC.owner ? '<span class="pill role-owner">👑 Owner</span>' : ACC.admin ? '<span class="pill role-admin">🛡 Admin</span>' : ''}<br><small class="muted">${ACC.verified ? '✅ Email verified · progress saves to your account automatically' : '⚠️ Email not verified yet. Click the link we sent you.'}</small></div>
+    <div class="row">${!ACC.verified ? '<button class="btn sm primary" data-acct="re">I verified it</button><button class="btn sm" data-acct="send">Resend email</button>' : ''}${ACC.admin ? '<a class="btn sm primary" href="#/admin">🛡 Admin panel</a>' : ''}<button class="btn sm ghost" data-acct="out">Sign out</button></div></div></div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-acct]'); if (!b) return;
+  const a = b.dataset.acct;
+  if (a === 'in') { if (S.account?.skip) { S.account = null; save(); } showAuthGate(); }
+  if (a === 'out' && confirm('Sign out? Your progress is saved to your account, and this browser will be cleared.')) authSignOut();
+  if (a === 're') authRecheck().then(() => toast(ACC.verified ? 'Email verified ✅' + (ACC.owner ? ' Owner tools unlocked 👑' : '') : 'Not verified yet. Check your inbox and spam folder.'));
+  if (a === 'send') authResendVerify().then(() => toast('Sent! Check your inbox.')).catch(x => toast('Could not send', authErr(x)));
+});
 route('/profile', (view, p) => {
   const L = levelFor(S.xp), cur = xpForLevel(L), nxt = xpForLevel(L + 1);
   const acc = S.stats.answered ? Math.round(S.stats.correct / S.stats.answered * 100) : 0;
@@ -10,6 +23,7 @@ route('/profile', (view, p) => {
     <div class="card"><div class="row" style="gap:20px;align-items:center">${avatarHtml(S.profile, 'lg')}<div style="flex:1;min-width:220px"><h1 style="font-size:2rem;margin:0">${esc(S.profile.name || 'Student')}</h1><div class="muted">${esc(myTitle())} · ${gradeLabel(S.profile.year)}</div>${(S.profile.courses || []).length ? `<div class="row" style="gap:6px;margin-top:8px">${S.profile.courses.filter(id => COURSE[id]).map(id => `<a class="pill" href="#/course/${id}">${COURSE[id].emoji} ${esc(COURSE[id].title)}</a>`).join('')}</div>` : ''}
       <div style="margin-top:12px"><div class="spread"><b class="mono">Level ${L}</b><small class="muted mono">${fmtNum(S.xp - cur)} / ${fmtNum(nxt - cur)} XP to L${L + 1}</small></div><div class="bar" style="height:10px;margin-top:6px"><i style="width:${(S.xp - cur) / (nxt - cur) * 100}%"></i></div></div></div>
       <button class="btn" id="edit-p">✏️ Edit profile</button></div></div>
+    ${squadState().configured ? accountCard() : ''}
     <div class="grid g4" style="margin:16px 0">${[['⭐', fmtNum(S.xp), 'total XP'], ['🔥', `${streakAlive()} / ${S.streak.best}`, 'streak / best'], ['📖', Object.keys(S.lessons).length, 'lessons'], ['🎯', acc + '%', `accuracy (${fmtNum(S.stats.answered)} Qs)`], ['👹', S.stats.bossWins, 'boss wins'], ['🐞', S.stats.bugs, 'bugs found'], ['⚔️', `${S.stats.duelsWon}/${S.stats.duelsPlayed}`, 'duels won'], ['⚡', S.stats.speedBest, 'speed best']].map(([i, v, l]) => `<div class="card" style="padding:14px"><div class="stat"><b>${i} ${v}</b><span>${l}</span></div></div>`).join('')}</div>
     <div class="card" style="margin-bottom:16px"><h3>Activity · last 12 weeks</h3><div style="display:grid;grid-template-rows:repeat(7,12px);grid-auto-flow:column;grid-auto-columns:12px;gap:3px;overflow-x:auto;padding:4px 0" aria-label="Study activity heatmap">${days.map(([d, x]) => `<i title="${d}: ${x} XP" style="border-radius:3px;background:${x ? `color-mix(in srgb,var(--accent) ${Math.min(100, 25 + x / 3)}%,var(--bg3))` : 'var(--bg3)'}"></i>`).join('')}</div></div>
     <h2>Badges <small class="muted mono" style="font-size:1rem">${Object.keys(S.badges).length}/${BADGES.length}</small></h2>

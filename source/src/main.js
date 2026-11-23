@@ -1,8 +1,11 @@
 /* ================= Boot ================= */
 applyTheme();
 render();
-if (!S.profile.onboarded) setTimeout(onboarding, 300);
-if (squadState().configured) fbInit();
+if (squadState().configured) {
+  if (!S.account?.email && !S.account?.skip) showAuthGate();   // sign in first; onboarding comes after
+  fbInit();
+}
+if (!S.profile.onboarded && !$('#auth-gate')) setTimeout(onboarding, 300);
 // register service worker for offline use / install (only works when hosted, e.g. GitHub Pages)
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude|claudeusercontent/.test(location.hostname)) {
   navigator.serviceWorker.register('sw.js').catch(() => { });

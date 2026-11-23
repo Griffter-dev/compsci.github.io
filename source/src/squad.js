@@ -11,7 +11,7 @@ const normCode = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
 function squadState() {
   const cfg = window.COMPCI_FIREBASE_CONFIG;
-  return { configured: !!(cfg && cfg.apiKey && !/PASTE/i.test(cfg.apiKey)), status: FB.status, err: FB.err, inSquad: !!S.squad?.code, code: S.squad?.code, name: S.squad?.name, isLeader: !!(S.squad && FB.uid && S.squad.owner === FB.uid) };
+  return { configured: !!(cfg && cfg.apiKey && !/PASTE/i.test(cfg.apiKey)), status: FB.status, err: FB.err, inSquad: !!S.squad?.code, code: S.squad?.code, name: S.squad?.name, isLeader: !!(S.squad && FB.uid && (S.squad.owner === FB.uid || ACC.admin)), signedIn: signedIn() };
 }
 const withTimeout = (p, ms, msg = 'timeout') => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(msg)), ms))]);
 let fbReady;
@@ -25,17 +25,16 @@ function fbInit() {
       const [appM, authM, fsM] = await withTimeout(Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]), 12000, 'Could not download Firebase (blocked or offline)');
       const app = appM.initializeApp(window.COMPCI_FIREBASE_CONFIG);
       const auth = authM.getAuth(app);
-      const user = await withTimeout(new Promise((res, rej) => {
-        const un = authM.onAuthStateChanged(auth, u => { if (u) { un(); res(u); } });
-        authM.signInAnonymously(auth).catch(rej);
-      }), 12000, 'Could not sign in to Firebase (is Anonymous sign-in enabled?)');
-      FB.uid = user.uid; FB.f = fsM; FB.db = fsM.getFirestore(app); FB.status = 'ok';
-      if (S.squad?.code) { refreshSquadMeta(); writeMember(); startBankSync(); startAssignSync(); }
-      flushFeedbackQueue();
+      FB.a = authM; FB.auth = auth; FB.f = fsM; FB.db = fsM.getFirestore(app);
+      // Wait for Firebase to say who (if anyone) is already signed in on this browser.
+      const user = await withTimeout(new Promise(res => { const un = authM.onAuthStateChanged(auth, u => { un(); res(u); }); }), 12000, 'Could not reach the sign-in server');
+      FB.status = 'ok';
+      await onAuthUser(user);
+      authM.onAuthStateChanged(auth, u => { if ((u && u.uid) !== (ACC.user && ACC.user.uid)) onAuthUser(u); });
       return true;
     } catch (e) {
       console.warn('Firebase init failed', e); FB.status = 'error'; FB.err = e.code || e.message || String(e); return false;
-    } finally { if (location.hash.startsWith('#/squad') || location.hash.startsWith('#/live')) render(); }
+    } finally { $('#auth-gate')?.redraw?.(); if (location.hash.startsWith('#/squad') || location.hash.startsWith('#/live') || location.hash.startsWith('#/admin')) render(); }
   })();
   return fbReady;
 }
@@ -46,6 +45,7 @@ const sqPath = () => ['squads', S.squad.code];
 /* ---------- Squad membership ---------- */
 async function createSquad(name) {
   await fbInit(); if (FB.status !== 'ok') throw new Error('The squad server isn\'t reachable.');
+  if (!FB.uid) throw new Error('Sign in first to use squads.');
   let code;
   for (let i = 0; i < 5; i++) { code = genCode(); const s = await FB.f.getDoc(fdoc('squads', code)); if (!s.exists()) break; }
   await FB.f.setDoc(fdoc('squads', code), { name: name.slice(0, 40), owner: FB.uid, banned: [], created: FB.f.serverTimestamp() });
@@ -54,6 +54,7 @@ async function createSquad(name) {
 }
 async function joinSquad(code) {
   await fbInit(); if (FB.status !== 'ok') throw new Error('The squad server isn\'t reachable.');
+  if (!FB.uid) throw new Error('Sign in first to use squads.');
   code = normCode(code);
   if (code.length !== 6) throw new Error('Squad codes are 6 characters, like K7Q-2MX.');
   const snap = await FB.f.getDoc(fdoc('squads', code));
@@ -180,18 +181,19 @@ const deleteAssignment = id => FB.f.deleteDoc(fdoc(...sqPath(), 'assignments', i
 /* ---------- Feedback (anyone can send; only admins listed in config/admins can read) ---------- */
 async function sendFeedback(fb) {
   await fbInit();
-  if (FB.status !== 'ok') { S.feedbackQueue = [...(S.feedbackQueue || []), fb]; save(); return 'queued'; }
+  if (FB.status !== 'ok' || !FB.uid) { S.feedbackQueue = [...(S.feedbackQueue || []), fb]; save(); return 'queued'; }
   await FB.f.addDoc(fcol('feedback'), { ...fb, uid: FB.uid, status: 'new' });
   return 'sent';
 }
 async function flushFeedbackQueue() {
-  if (FB.status !== 'ok' || !(S.feedbackQueue || []).length) return;
+  if (FB.status !== 'ok' || !FB.uid || !(S.feedbackQueue || []).length) return;
   const q = S.feedbackQueue.slice(); S.feedbackQueue = []; save();
   for (const fb of q) { try { await FB.f.addDoc(fcol('feedback'), { ...fb, uid: FB.uid, status: 'new' }); } catch (e) { S.feedbackQueue.push(fb); } }
   save();
 }
 async function isFeedbackAdmin() {
   await fbInit(); if (FB.status !== 'ok') return false;
+  if (ACC.admin) return true;
   try { const s = await FB.f.getDoc(fdoc('config', 'admins')); return s.exists() && (s.data().uids || []).includes(FB.uid); } catch (e) { return false; }
 }
 function subFeedback(cb) { return FB.f.onSnapshot(FB.f.query(fcol('feedback'), FB.f.orderBy('created', 'desc'), FB.f.limit(300)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => cb(null, e)); }

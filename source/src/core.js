@@ -69,7 +69,7 @@ function deepMerge(base, over) {
 }
 let saveT;
 function save() { clearTimeout(saveT); saveT = setTimeout(saveNow, 150); }
-function saveNow() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage full or blocked */ } }
+function saveNow() { S.savedAt = Date.now(); try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage full or blocked */ } if (typeof cloudSave === 'function') cloudSave(); }
 load();
 
 /* ---------- Levels, titles ---------- */

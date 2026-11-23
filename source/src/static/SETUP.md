@@ -40,11 +40,12 @@ Firebase is Google's free app database. It lets squads talk to each other in rea
 2. Click **Create a project** (or **Add project**). Name it `compcistudy`.
 3. When it asks about Google Analytics, **turn it off**. You don't need it.
 
-### 2.2 Turn on anonymous sign-in
-This gives each browser a private ID without needing an email.
+### 2.2 Turn on email sign-in
+Everyone signs in with an email, so progress follows them to any device.
 1. In the left menu, open **Build → Authentication → Get started**.
-2. Go to the **Sign-in method** tab, click **Anonymous**, switch it **on**, and click **Save**.
-3. Go to the **Settings** tab, open **Authorized domains**, and click **Add domain**. Enter `YOUR-NAME.github.io`.
+2. Go to the **Sign-in method** tab. Click **Email/Password**, switch the first toggle **on**, and click **Save**.
+3. Still on **Sign-in method**, click **Add new provider → Google**, switch it **on**, choose a support email, and click **Save**. This adds the "Continue with Google" button, which works with school Google accounts too.
+4. Go to the **Settings** tab, open **Authorized domains**, and click **Add domain**. Enter `YOUR-NAME.github.io`.
 
 ### 2.3 Create the database
 1. In the left menu, open **Build → Firestore Database → Create database**.
@@ -68,14 +69,15 @@ This gives each browser a private ID without needing an email.
 2. Click **Copy invite link** and send it to a friend. When they open it and tap **Join**, you should both see each other on the leaderboard within a second or two.
 3. Try a live duel: **Squad → Duels → Create duel**. Your friend taps **Join**.
 
-### 2.6 Read feedback (site owner only)
-Everyone can send suggestions from the **💬 Feedback** tab, and only you can read them:
-1. On your own computer, open the site and go to **Feedback → "Site owner? Open the feedback inbox"**. It shows a long ID.
-2. In the Firebase console, open **Firestore Database** → **Start collection**, and name it `config`.
-3. Set the document ID to `admins`. Add a field named `uids` of type **array**, put the ID from step 1 in it as a string, then click **Save**.
-4. Reload the inbox. You'll see every message, and you can mark each one **done** or delete it.
+### 2.6 Owner and admin access
+The owner emails are written into `firestore.rules` and `src/account.js` (`OWNER_EMAILS`). When an owner signs in with one of them, the site gives them owner tools automatically:
+- the **🛡 Admin panel** (avatar menu): every account, every squad, and adding or removing admins
+- the **💬 Feedback inbox**
+- leader powers in every squad
 
-The ID belongs to that browser. If you clear your browser data or switch devices, add the new ID to the array too.
+Owner access needs a **verified** email. "Continue with Google" is verified right away. With email + password, click the link in the verification email, then press **I verified it** on your Profile page.
+
+To make a friend an admin, open **Admin panel → 🛡 Admins** and add their email. To change the owners, edit the email list in both files and re-publish the rules.
 
 ---
 
@@ -88,10 +90,12 @@ The ID belongs to that browser. If you clear your browser data or switch devices
 | The Squad tab says "can't reach the squad server" at school | Your school's filter is blocking Firebase. Everything else still works. Ask your CS teacher if IT can allow `firestore.googleapis.com`, `identitytoolkit.googleapis.com`, `securetoken.googleapis.com` and `www.gstatic.com`. |
 | Python exercises say "Could not download Python" | Python runs in the browser using files from `cdn.jsdelivr.net`, about 10 MB the first time. If the school filter blocks that site, ask IT to allow it. JavaScript, HTML and fill-in-the-code exercises still work. |
 | A teacher wants to assign work | Have the teacher create the squad, so they're the leader. Leaders get an **＋ Assign** button and a **Gradebook** tab on the Assignments page. |
-| "Could not sign in to Firebase" | Anonymous sign-in isn't turned on (step 2.2). |
+| "This sign-in method isn't switched on yet" | Turn on Email/Password (and Google) in step 2.2. |
+| "This website isn't on Firebase's list of allowed sites" | Add your github.io address under Authorized domains (step 2.2, item 4). |
+| An owner doesn't see the Admin panel | Their email isn't verified yet. Click the link in the email, then **Profile → I verified it**. Also check the rules were re-published. |
 | "Missing or insufficient permissions" | The rules weren't published (step 2.3, item 4). |
 | You changed the site but still see the old version | Refresh the page twice. The app caches itself so it works offline. |
-| The leader lost their account (cleared browser data) | Anyone can create a new squad. Or, before clearing data, the leader can pass leadership on: **Squad settings → 👑**. |
+| A leader can't get back into their squad | Squad leadership belongs to the account, so signing in with the same email anywhere restores it. An owner or admin can also open the squad from the Admin panel and pass leadership on. |
 
 **Privacy note:** Only nicknames, avatars, XP, levels and streaks are shared with your squad. Nobody needs an email or a real name. Progress is saved in each browser, so use **Settings → Export backup** to move it between devices.
 

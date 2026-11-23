@@ -13,6 +13,11 @@ route('/squad', (view, p) => {
     $('#retry', view).onclick = () => { fbReady = null; FB.status = 'off'; fbInit(); render(); };
     return;
   }
+  if (!FB.uid) {
+    view.innerHTML = `<div class="wrap narrow">${head}<div class="card"><h3>🔐 Sign in to use squads</h3><p class="muted">Squads, leaderboards and duels need an account so your friends know it's really you.</p><button class="btn primary" id="sq-in">Sign in or create an account</button></div></div>`;
+    $('#sq-in', view).onclick = () => { if (S.account?.skip) { S.account = null; save(); } showAuthGate(); };
+    return;
+  }
   if (!ss.inSquad) return squadJoinView(view, p, head);
   squadHome(view, p);
 });

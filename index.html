@@ -496,6 +496,23 @@ dl.gloss{display:grid;gap:10px;margin:0}
 .qtable th{background:var(--bg2)}
 .choices.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 @media (max-width:560px){.choices.grid2{grid-template-columns:1fr}}
+/* sign-in screen + roles */
+body.gated{overflow:hidden}
+#auth-gate{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;overflow:auto;padding:24px 14px}
+.ag-card{width:min(420px,100%);text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:calc(var(--radius) * 1.5);padding:28px 24px;box-shadow:var(--shadow)}
+.ag-card h1{font-size:1.7rem;margin:10px 0 4px}
+.ag-l{display:flex;flex-direction:column;gap:4px;font-size:.88rem;font-weight:600}
+.ag-msg{min-height:1.2em;margin:0;font-size:.88rem;color:var(--bad)}.ag-msg.ok{color:var(--muted)}
+.ag-or{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:.8rem}.ag-or::before,.ag-or::after{content:"";flex:1;border-top:1px solid var(--border)}
+.ag-links{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:14px;font-size:.88rem}
+.ag-skip{display:block;margin-top:22px;font-size:.85rem;color:var(--muted)}
+.ag-note{display:block;margin-top:4px;font-size:.75rem}
+.role-owner{background:color-mix(in srgb,#f5b301 22%,transparent);color:#f5c542;border-color:color-mix(in srgb,#f5b301 50%,transparent)}
+.role-admin{background:color-mix(in srgb,var(--accent2) 18%,transparent)}
+.menu-acct{padding:8px 12px 10px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;flex-direction:column;gap:2px;max-width:260px}
+.menu-acct b{font-size:.85rem;overflow:hidden;text-overflow:ellipsis}
+.menu-acct .pill{align-self:flex-start;margin-top:4px}
+.admin-t{width:100%;border-collapse:collapse;font-size:.9rem}.admin-t th,.admin-t td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}.admin-t th{color:var(--muted);font-weight:600;font-size:.8rem}
 
 /* ===== Luau course: 3D world, Explorer, Output ===== */
 .lx-stage-wrap{display:flex;flex-direction:column;gap:6px;min-width:0;container-type:inline-size}
@@ -3720,7 +3737,7 @@ function deepMerge(base, over) {
 }
 let saveT;
 function save() { clearTimeout(saveT); saveT = setTimeout(saveNow, 150); }
-function saveNow() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage full or blocked */ } }
+function saveNow() { S.savedAt = Date.now(); try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* storage full or blocked */ } if (typeof cloudSave === 'function') cloudSave(); }
 load();
 
 /* ---------- Levels, titles ---------- */
@@ -4138,7 +4155,7 @@ function toggleMenu() {
   const ex = $('.menu'); if (ex) { ex.remove(); return; }
   const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'menu');
   m.innerHTML = `<div style="padding:8px 12px"><b>${esc(S.profile.name || 'Student')}</b><br><small>${esc(myTitle())} · Level ${levelFor(S.xp)}</small></div><hr>
-    <a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/exam" role="menuitem">📝 AP Exam & FRQs</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/notes" role="menuitem">📝 Notes & cheat sheets</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/feedback?from=${encodeURIComponent(pageLabel())}" role="menuitem">💬 Feedback</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>`;
+    ${signedIn() ? `<div class="menu-acct"><small class="muted">Signed in as</small><b>${esc(ACC.email)}</b>${ACC.owner ? '<span class="pill role-owner">👑 Owner</span>' : ACC.admin ? '<span class="pill role-admin">🛡 Admin</span>' : ''}</div>` : ''}${ACC.admin ? '<a href="#/admin" role="menuitem">🛡 Admin panel</a>' : ''}<a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/exam" role="menuitem">📝 AP Exam & FRQs</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/notes" role="menuitem">📝 Notes & cheat sheets</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/feedback?from=${encodeURIComponent(pageLabel())}" role="menuitem">💬 Feedback</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>`;
   document.body.appendChild(m);
   $('a', m).focus();
   const off = e => { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('click', off); } };
@@ -5670,7 +5687,7 @@ const normCode = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
 function squadState() {
   const cfg = window.COMPCI_FIREBASE_CONFIG;
-  return { configured: !!(cfg && cfg.apiKey && !/PASTE/i.test(cfg.apiKey)), status: FB.status, err: FB.err, inSquad: !!S.squad?.code, code: S.squad?.code, name: S.squad?.name, isLeader: !!(S.squad && FB.uid && S.squad.owner === FB.uid) };
+  return { configured: !!(cfg && cfg.apiKey && !/PASTE/i.test(cfg.apiKey)), status: FB.status, err: FB.err, inSquad: !!S.squad?.code, code: S.squad?.code, name: S.squad?.name, isLeader: !!(S.squad && FB.uid && (S.squad.owner === FB.uid || ACC.admin)), signedIn: signedIn() };
 }
 const withTimeout = (p, ms, msg = 'timeout') => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(msg)), ms))]);
 let fbReady;
@@ -5684,17 +5701,16 @@ function fbInit() {
       const [appM, authM, fsM] = await withTimeout(Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]), 12000, 'Could not download Firebase (blocked or offline)');
       const app = appM.initializeApp(window.COMPCI_FIREBASE_CONFIG);
       const auth = authM.getAuth(app);
-      const user = await withTimeout(new Promise((res, rej) => {
-        const un = authM.onAuthStateChanged(auth, u => { if (u) { un(); res(u); } });
-        authM.signInAnonymously(auth).catch(rej);
-      }), 12000, 'Could not sign in to Firebase (is Anonymous sign-in enabled?)');
-      FB.uid = user.uid; FB.f = fsM; FB.db = fsM.getFirestore(app); FB.status = 'ok';
-      if (S.squad?.code) { refreshSquadMeta(); writeMember(); startBankSync(); startAssignSync(); }
-      flushFeedbackQueue();
+      FB.a = authM; FB.auth = auth; FB.f = fsM; FB.db = fsM.getFirestore(app);
+      // Wait for Firebase to say who (if anyone) is already signed in on this browser.
+      const user = await withTimeout(new Promise(res => { const un = authM.onAuthStateChanged(auth, u => { un(); res(u); }); }), 12000, 'Could not reach the sign-in server');
+      FB.status = 'ok';
+      await onAuthUser(user);
+      authM.onAuthStateChanged(auth, u => { if ((u && u.uid) !== (ACC.user && ACC.user.uid)) onAuthUser(u); });
       return true;
     } catch (e) {
       console.warn('Firebase init failed', e); FB.status = 'error'; FB.err = e.code || e.message || String(e); return false;
-    } finally { if (location.hash.startsWith('#/squad') || location.hash.startsWith('#/live')) render(); }
+    } finally { $('#auth-gate')?.redraw?.(); if (location.hash.startsWith('#/squad') || location.hash.startsWith('#/live') || location.hash.startsWith('#/admin')) render(); }
   })();
   return fbReady;
 }
@@ -5705,6 +5721,7 @@ const sqPath = () => ['squads', S.squad.code];
 /* ---------- Squad membership ---------- */
 async function createSquad(name) {
   await fbInit(); if (FB.status !== 'ok') throw new Error('The squad server isn\'t reachable.');
+  if (!FB.uid) throw new Error('Sign in first to use squads.');
   let code;
   for (let i = 0; i < 5; i++) { code = genCode(); const s = await FB.f.getDoc(fdoc('squads', code)); if (!s.exists()) break; }
   await FB.f.setDoc(fdoc('squads', code), { name: name.slice(0, 40), owner: FB.uid, banned: [], created: FB.f.serverTimestamp() });
@@ -5713,6 +5730,7 @@ async function createSquad(name) {
 }
 async function joinSquad(code) {
   await fbInit(); if (FB.status !== 'ok') throw new Error('The squad server isn\'t reachable.');
+  if (!FB.uid) throw new Error('Sign in first to use squads.');
   code = normCode(code);
   if (code.length !== 6) throw new Error('Squad codes are 6 characters, like K7Q-2MX.');
   const snap = await FB.f.getDoc(fdoc('squads', code));
@@ -5839,23 +5857,213 @@ const deleteAssignment = id => FB.f.deleteDoc(fdoc(...sqPath(), 'assignments', i
 /* ---------- Feedback (anyone can send; only admins listed in config/admins can read) ---------- */
 async function sendFeedback(fb) {
   await fbInit();
-  if (FB.status !== 'ok') { S.feedbackQueue = [...(S.feedbackQueue || []), fb]; save(); return 'queued'; }
+  if (FB.status !== 'ok' || !FB.uid) { S.feedbackQueue = [...(S.feedbackQueue || []), fb]; save(); return 'queued'; }
   await FB.f.addDoc(fcol('feedback'), { ...fb, uid: FB.uid, status: 'new' });
   return 'sent';
 }
 async function flushFeedbackQueue() {
-  if (FB.status !== 'ok' || !(S.feedbackQueue || []).length) return;
+  if (FB.status !== 'ok' || !FB.uid || !(S.feedbackQueue || []).length) return;
   const q = S.feedbackQueue.slice(); S.feedbackQueue = []; save();
   for (const fb of q) { try { await FB.f.addDoc(fcol('feedback'), { ...fb, uid: FB.uid, status: 'new' }); } catch (e) { S.feedbackQueue.push(fb); } }
   save();
 }
 async function isFeedbackAdmin() {
   await fbInit(); if (FB.status !== 'ok') return false;
+  if (ACC.admin) return true;
   try { const s = await FB.f.getDoc(fdoc('config', 'admins')); return s.exists() && (s.data().uids || []).includes(FB.uid); } catch (e) { return false; }
 }
 function subFeedback(cb) { return FB.f.onSnapshot(FB.f.query(fcol('feedback'), FB.f.orderBy('created', 'desc'), FB.f.limit(300)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => cb(null, e)); }
 const updateFeedback = (id, data) => FB.f.updateDoc(fdoc('feedback', id), data);
 const deleteFeedback = id => FB.f.deleteDoc(fdoc('feedback', id));
+
+// ---- account.js ----
+/* ================= Accounts: email sign-in, cloud progress, owner/admin roles =================
+   People sign in with an email + password (or Google). Their progress is saved to
+   Firestore under users/{uid}, so it follows them to any device.
+   OWNER_EMAILS get full owner/admin powers automatically once their email is verified
+   (Google sign-ins are verified already). The same list is in firestore.rules, which is
+   what actually enforces it on the server.                                              */
+const OWNER_EMAILS = ['francescovic0525@gmail.com', '129fcapone@frhsd.com'];
+const ACC = { user: null, email: '', verified: false, owner: false, admin: false, extraAdmins: [], ready: false };
+const signedIn = () => !!(ACC.user && !ACC.user.isAnonymous);
+
+function computeRoles() {
+  const u = ACC.user;
+  ACC.email = (u && !u.isAnonymous && u.email || '').toLowerCase();
+  ACC.verified = !!(u && u.emailVerified);
+  ACC.owner = !!(ACC.email && ACC.verified && OWNER_EMAILS.includes(ACC.email));
+  ACC.admin = ACC.owner || !!(ACC.email && ACC.verified && ACC.extraAdmins.includes(ACC.email));
+  S.account = signedIn() ? { email: ACC.email, uid: u.uid } : (S.account?.skip ? S.account : null);
+}
+
+async function loadAdminList() {
+  if (FB.status !== 'ok' || !signedIn()) return;
+  try { const s = await FB.f.getDoc(fdoc('config', 'admins')); ACC.extraAdmins = s.exists() ? (s.data().emails || []).map(e => String(e).toLowerCase()) : []; } catch (e) { ACC.extraAdmins = []; }
+  computeRoles();
+}
+
+// Called by fbInit whenever Firebase reports who is signed in (or that nobody is).
+async function onAuthUser(user) {
+  const was = ACC.user?.uid;
+  ACC.user = user; FB.uid = user ? user.uid : null; ACC.ready = true;
+  computeRoles();
+  if (signedIn()) {
+    if (was !== user.uid) await cloudLoad();
+    await loadAdminList();
+    if (S.squad?.code) { refreshSquadMeta(); writeMember(); startBankSync(); startAssignSync(); }
+    flushFeedbackQueue();
+    closeAuthGate();
+    if (!S.profile.onboarded && !$('.modal')) setTimeout(() => { if (!S.profile.onboarded && !$('.modal')) onboarding(); }, 250);
+  }
+  saveNow(); renderChrome(); if (!$('#auth-gate')) render();
+  maybeShowGate();
+}
+
+/* ---------- Cloud progress ---------- */
+const cloudRefs = () => [fdoc('users', FB.uid), fdoc('users', FB.uid, 'private', 'progress')];
+let cloudT = null, cloudBusy = false;
+function cloudSave(now) {
+  if (!signedIn() || FB.status !== 'ok') return;
+  clearTimeout(cloudT);
+  const go = async () => {
+    if (cloudBusy) { cloudT = setTimeout(go, 1500); return; }
+    cloudBusy = true;
+    try {
+      const copy = { ...S }; delete copy.examDraft;
+      let state = JSON.stringify(copy);
+      if (state.length > 900000) { copy.drafts = {}; state = JSON.stringify(copy); }
+      const [pub, priv] = cloudRefs();
+      await FB.f.setDoc(priv, { state, savedAt: S.savedAt || Date.now() });
+      await FB.f.setDoc(pub, { email: ACC.email, name: S.profile.name || '', avatar: S.profile.avatar || '🦊', xp: S.xp || 0, level: levelFor(S.xp || 0), courses: S.profile.courses || [], squad: S.squad?.code || '', updated: Date.now() }, { merge: true });
+    } catch (e) { console.warn('cloud save failed', e); }
+    cloudBusy = false;
+  };
+  if (now) return go();
+  cloudT = setTimeout(go, 4000);
+}
+async function cloudLoad() {
+  try {
+    const snap = await FB.f.getDoc(cloudRefs()[1]);
+    if (snap.exists()) {
+      const cloud = JSON.parse(snap.data().state || '{}');
+      const localIsOther = S.account?.uid && S.account.uid !== FB.uid;
+      const useCloud = localIsOther || !S.profile.onboarded || (cloud.xp || 0) >= (S.xp || 0) || (cloud.savedAt || 0) > (S.savedAt || 0);
+      if (useCloud) {
+        S = deepMerge(DEFAULT_STATE(), cloud); computeRoles(); saveNow(); applyTheme();
+        if (S.profile.onboarded) { $('#modal-root').innerHTML = ''; modalClose = null; }
+        toast('Progress loaded', 'Welcome back' + (S.profile.name ? ', ' + S.profile.name : '') + '!');
+        return;
+      }
+    }
+    cloudSave(true);   // first sign-in on this account: upload what's on this device
+  } catch (e) { console.warn('cloud load failed', e); }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') cloudSave(true); });
+
+/* ---------- Sign in / sign up / sign out ---------- */
+const AUTH_MSG = {
+  'auth/invalid-credential': 'Wrong email or password.', 'auth/wrong-password': 'Wrong email or password.', 'auth/user-not-found': 'No account with that email. Create one instead?',
+  'auth/email-already-in-use': 'That email already has an account. Sign in instead.', 'auth/credential-already-in-use': 'That account is already in use. Sign in instead.',
+  'auth/weak-password': 'Passwords need at least 6 characters.', 'auth/invalid-email': 'That doesn\'t look like an email address.', 'auth/missing-password': 'Type your password.',
+  'auth/too-many-requests': 'Too many tries. Wait a minute and try again.', 'auth/network-request-failed': 'Can\'t reach the sign-in server. Check your internet.',
+  'auth/popup-blocked': 'The browser blocked the Google window. Allow pop-ups for this site and try again.', 'auth/popup-closed-by-user': 'The Google window was closed before signing in.',
+  'auth/operation-not-allowed': 'This sign-in method isn\'t switched on yet. The site owner needs to enable it in Firebase → Authentication → Sign-in method.',
+  'auth/unauthorized-domain': 'This website isn\'t on Firebase\'s list of allowed sites yet. The site owner needs to add it in Firebase → Authentication → Settings → Authorized domains.',
+};
+const authErr = e => AUTH_MSG[e?.code] || (e?.message || String(e)).replace(/^Firebase: /, '');
+
+async function authSignUp(email, pw) {
+  const A = FB.a, auth = FB.auth;
+  const cred = A.EmailAuthProvider.credential(email, pw);
+  const r = auth.currentUser?.isAnonymous ? await A.linkWithCredential(auth.currentUser, cred) : await A.createUserWithEmailAndPassword(auth, email, pw);
+  try { await A.sendEmailVerification(r.user); } catch (e) { }
+  await onAuthUser(r.user);
+  return r.user;
+}
+async function authSignIn(email, pw) { const r = await FB.a.signInWithEmailAndPassword(FB.auth, email, pw); await onAuthUser(r.user); return r.user; }
+async function authGoogle() {
+  const A = FB.a, auth = FB.auth, prov = new A.GoogleAuthProvider();
+  prov.setCustomParameters({ prompt: 'select_account' });
+  let r;
+  try { r = auth.currentUser?.isAnonymous ? await A.linkWithPopup(auth.currentUser, prov) : await A.signInWithPopup(auth, prov); }
+  catch (e) {
+    if (e.code !== 'auth/credential-already-in-use') throw e;
+    r = await A.signInWithCredential(auth, A.GoogleAuthProvider.credentialFromError(e));
+  }
+  await onAuthUser(r.user); return r.user;
+}
+async function authReset(email) { await FB.a.sendPasswordResetEmail(FB.auth, email); }
+async function authResendVerify() { if (FB.auth?.currentUser) await FB.a.sendEmailVerification(FB.auth.currentUser); }
+async function authRecheck() { if (!FB.auth?.currentUser) return; await FB.auth.currentUser.reload(); await FB.auth.currentUser.getIdToken(true); ACC.user = FB.auth.currentUser; computeRoles(); await loadAdminList(); renderChrome(); render(); }
+async function authSignOut() {
+  await cloudSave(true);
+  try { stopBankSync?.(); stopAssignSync?.(); } catch (e) { }
+  await FB.a.signOut(FB.auth);
+  try { localStorage.removeItem(STORE_KEY); } catch (e) { }
+  location.hash = '#/'; location.reload();
+}
+
+/* ---------- The sign-in screen ---------- */
+function closeAuthGate() { $('#auth-gate')?.remove(); document.body.classList.remove('gated'); }
+function maybeShowGate() {
+  if (signedIn() || S.account?.skip || $('#auth-gate')) return;
+  if (!squadState().configured) return;                // no Firebase on this copy of the site: nothing to sign in to
+  showAuthGate();
+}
+function showAuthGate(mode = 'in') {
+  closeAuthGate();
+  const g = document.createElement('div'); g.id = 'auth-gate'; g.setAttribute('role', 'dialog'); g.setAttribute('aria-modal', 'true'); g.setAttribute('aria-label', 'Sign in');
+  document.body.appendChild(g); document.body.classList.add('gated');
+  const draw = () => {
+    const up = mode === 'up', st = FB.status;
+    g.innerHTML = `<div class="ag-card">
+      <div class="logo" style="justify-content:center;margin-bottom:6px"><span class="mark">&gt;_</span><span>CompSci-<b>Study</b></span></div>
+      <h1>${mode === 'reset' ? 'Reset your password' : up ? 'Create your account' : 'Sign in'}</h1>
+      <p class="muted" style="margin:0 0 16px">${mode === 'reset' ? 'We\'ll email you a link to choose a new password.' : 'Your progress is saved to your account, so it follows you to any device.'}</p>
+      ${st === 'loading' || st === 'off' && !ACC.ready ? '<p class="muted">⏳ Connecting…</p>' : ''}
+      ${st === 'error' ? `<div class="notice warn" style="text-align:left"><b>Can't reach the sign-in server.</b><br><small>${esc(FB.err)}. Your school network may block it. You can still study without an account.</small></div>` : ''}
+      <form id="ag-form" class="stack" style="gap:10px;text-align:left" novalidate>
+        <label class="ag-l">Email<input class="input" id="ag-email" type="email" autocomplete="email" required value="${esc(g.dataset.email || '')}"></label>
+        ${mode === 'reset' ? '' : `<label class="ag-l">Password<input class="input" id="ag-pw" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" minlength="6" required></label>`}
+        ${up ? '<label class="ag-l">Confirm password<input class="input" id="ag-pw2" type="password" autocomplete="new-password" required></label>' : ''}
+        <p id="ag-msg" class="ag-msg" role="alert"></p>
+        <button class="btn primary" type="submit" style="width:100%;justify-content:center" ${st === 'ok' ? '' : 'disabled'}>${mode === 'reset' ? 'Send reset link' : up ? 'Create account' : 'Sign in'}</button>
+      </form>
+      ${mode === 'reset' ? '' : `<div class="ag-or"><span>or</span></div><button class="btn" id="ag-google" style="width:100%;justify-content:center" ${st === 'ok' ? '' : 'disabled'}><b style="color:#4285f4">G</b>&nbsp; Continue with Google</button>`}
+      <div class="ag-links">
+        ${mode === 'in' ? '<a href="#" data-m="up">New here? <b>Create an account</b></a><a href="#" data-m="reset">Forgot password?</a>' : '<a href="#" data-m="in">← Back to sign in</a>'}
+      </div>
+      <a href="#" id="ag-skip" class="ag-skip">Continue without an account</a>
+      <small class="muted ag-note">Without an account, progress is only saved in this browser and squads are turned off.</small>
+    </div>`;
+    const msg = (t, ok) => { const m = $('#ag-msg', g); m.textContent = t; m.className = 'ag-msg' + (ok ? ' ok' : ''); };
+    $$('[data-m]', g).forEach(a => a.onclick = ev => { ev.preventDefault(); g.dataset.email = $('#ag-email', g).value; mode = a.dataset.m; draw(); });
+    $('#ag-skip', g).onclick = ev => { ev.preventDefault(); S.account = { skip: true }; save(); closeAuthGate(); if (!S.profile.onboarded) onboarding(); };
+    const busy = on => $$('button', g).forEach(b => b.disabled = on || FB.status !== 'ok');
+    $('#ag-form', g).onsubmit = async ev => {
+      ev.preventDefault();
+      const email = $('#ag-email', g).value.trim(), pw = $('#ag-pw', g)?.value || '';
+      if (!/^\S+@\S+\.\S+$/.test(email)) return msg('Type a full email address.');
+      if (mode === 'up' && pw !== $('#ag-pw2', g).value) return msg('The two passwords don\'t match.');
+      busy(true); msg(mode === 'reset' ? 'Sending…' : 'Signing in…', true);
+      try {
+        if (mode === 'reset') { await authReset(email); msg('Check your inbox for the reset link.', true); busy(false); return; }
+        const user = mode === 'up' ? await authSignUp(email, pw) : await authSignIn(email, pw);
+        afterSignIn(user, mode === 'up');
+      } catch (e) { msg(authErr(e)); busy(false); }
+    };
+    const gb = $('#ag-google', g); if (gb) gb.onclick = async () => { busy(true); msg(''); try { afterSignIn(await authGoogle(), false); } catch (e) { msg(authErr(e)); busy(false); } };
+    setTimeout(() => $('#ag-email', g)?.focus(), 30);
+  };
+  g.redraw = draw; draw();
+}
+function afterSignIn(user, isNew) {
+  closeAuthGate();
+  const email = (user.email || '').toLowerCase();
+  if (OWNER_EMAILS.includes(email) && !user.emailVerified) toast('Verify your email to unlock owner tools', 'We sent a link to ' + email + '. Click it, then press "I verified it" on your profile.');
+  else if (ACC.owner) toast('👑 Welcome back, owner', 'You have full owner and admin access.');
+  else if (isNew) toast('Account created! 🎉', 'Check your inbox to verify your email.');
+}
 
 // ---- views-squad.js ----
 /* ================= Squad UI + live duel ================= */
@@ -5871,6 +6079,11 @@ route('/squad', (view, p) => {
   if (ss.status === 'error') {
     view.innerHTML = `<div class="wrap narrow">${head}<div class="notice warn"><b>Can't reach the squad server right now.</b><p class="muted" style="margin:6px 0 10px">Your school's network may be blocking Firebase (Google's database service), or you might be offline. Everything else in CompSci-Study still works. Try again from home, or ask your teacher about allowing <code>firestore.googleapis.com</code>.</p><small class="muted">Details: ${esc(ss.err)}</small></div><button class="btn primary" style="margin-top:14px" id="retry">Try again</button></div>`;
     $('#retry', view).onclick = () => { fbReady = null; FB.status = 'off'; fbInit(); render(); };
+    return;
+  }
+  if (!FB.uid) {
+    view.innerHTML = `<div class="wrap narrow">${head}<div class="card"><h3>🔐 Sign in to use squads</h3><p class="muted">Squads, leaderboards and duels need an account so your friends know it's really you.</p><button class="btn primary" id="sq-in">Sign in or create an account</button></div></div>`;
+    $('#sq-in', view).onclick = () => { if (S.account?.skip) { S.account = null; save(); } showAuthGate(); };
     return;
   }
   if (!ss.inSquad) return squadJoinView(view, p, head);
@@ -6078,11 +6291,92 @@ route('/live/:id', (view, p) => {
   }
 });
 
+// ---- views-admin.js ----
+/* ================= Admin panel (owners + admins only) ================= */
+route('/admin', (view) => {
+  if (!ACC.admin) {
+    view.innerHTML = `<div class="wrap narrow"><h1 style="font-size:2rem">🛡 Admin panel</h1><div class="card"><p>${!signedIn() ? 'Sign in with an owner or admin email to use the admin panel.' : !ACC.verified && (OWNER_EMAILS.includes(ACC.email) || ACC.extraAdmins.includes(ACC.email)) ? `Your email <b>${esc(ACC.email)}</b> isn't verified yet. Click the link we emailed you, then press the button below.` : 'Your account doesn\'t have admin access.'}</p>
+      <div class="row">${!signedIn() ? '<button class="btn primary" id="ad-in">Sign in</button>' : !ACC.verified && (OWNER_EMAILS.includes(ACC.email) || ACC.extraAdmins.includes(ACC.email)) ? '<button class="btn primary" id="ad-re">I verified it</button><button class="btn" id="ad-send">Resend the email</button>' : ''}</div></div></div>`;
+    $('#ad-in', view)?.addEventListener('click', () => showAuthGate());
+    $('#ad-re', view)?.addEventListener('click', () => authRecheck().then(() => toast(ACC.admin ? 'Admin access unlocked 👑' : 'Still not verified. Check your inbox (and spam).')));
+    $('#ad-send', view)?.addEventListener('click', () => authResendVerify().then(() => toast('Sent! Check your inbox.')));
+    return;
+  }
+  let tab = 'users';
+  view.innerHTML = `<div class="wrap"><span class="eyebrow">// admin</span>
+    <div class="spread"><h1 style="font-size:2.2rem;margin:4px 0">🛡 Admin panel</h1><span class="pill ${ACC.owner ? 'role-owner' : 'role-admin'}">${ACC.owner ? '👑 Owner' : '🛡 Admin'} · ${esc(ACC.email)}</span></div>
+    <div class="row tabs" style="margin:14px 0" role="tablist">
+      <button class="btn sm" data-t="users">👤 Users</button><button class="btn sm" data-t="squads">👥 All squads</button>
+      <a class="btn sm" href="#/feedback/inbox">💬 Feedback inbox</a>${ACC.owner ? '<button class="btn sm" data-t="admins">🛡 Admins</button>' : ''}</div>
+    <div id="ad-body"><p class="muted">Loading…</p></div></div>`;
+  const body = $('#ad-body', view);
+  const when = t => t ? new Date(t).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
+  const role = e => OWNER_EMAILS.includes(e) ? '<span class="pill role-owner">👑 Owner</span>' : ACC.extraAdmins.includes(e) ? '<span class="pill role-admin">🛡 Admin</span>' : '';
+  const draw = async () => {
+    $$('[data-t]', view).forEach(b => b.classList.toggle('primary', b.dataset.t === tab));
+    body.innerHTML = '<p class="muted">Loading…</p>';
+    await fbInit();
+    try {
+      if (tab === 'users') {
+        const s = await FB.f.getDocs(FB.f.query(fcol('users'), FB.f.orderBy('updated', 'desc'), FB.f.limit(500)));
+        const us = s.docs.map(d => ({ id: d.id, ...d.data() }));
+        body.innerHTML = `<p class="muted">${us.length} account${us.length === 1 ? '' : 's'} · most recently active first</p>
+          <div class="card" style="overflow-x:auto"><table class="admin-t"><thead><tr><th></th><th>Name</th><th>Email</th><th>Level</th><th>XP</th><th>Squad</th><th>Last active</th></tr></thead><tbody>
+          ${us.map(u => `<tr><td>${esc(u.avatar || '🦊')}</td><td><b>${esc(u.name || '(no name)')}</b> ${role(u.email)}</td><td class="mono">${esc(u.email || '')}</td><td>${u.level || 1}</td><td>${fmtNum(u.xp)}</td><td class="mono">${u.squad ? fmtCode(u.squad) : '—'}</td><td>${when(u.updated)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Nobody has signed in yet.</td></tr>'}
+          </tbody></table></div>`;
+      } else if (tab === 'squads') {
+        const s = await FB.f.getDocs(fcol('squads'));
+        const sq = s.docs.map(d => ({ code: d.id, ...d.data() }));
+        const counts = await Promise.all(sq.map(x => FB.f.getDocs(fcol('squads', x.code, 'members')).then(r => r.docs.length).catch(() => '?')));
+        body.innerHTML = `<p class="muted">${sq.length} squad${sq.length === 1 ? '' : 's'}. As an admin you have leader powers in every squad: approve or delete questions, kick members, assign work and start events.</p>
+          <div class="stack">${sq.map((x, i) => `<div class="card spread"><div><b>${esc(x.name || 'Squad')}</b> <span class="pill">${fmtCode(x.code)}</span><br><small class="muted">${counts[i]} member${counts[i] === 1 ? '' : 's'}</small></div>
+            <div class="row"><button class="btn sm primary" data-open="${x.code}">Open</button><button class="btn sm ghost" data-del="${x.code}">🗑 Delete</button></div></div>`).join('') || '<p class="muted">No squads yet.</p>'}</div>`;
+        $$('[data-open]', body).forEach(b => b.onclick = async () => {
+          const x = sq.find(q => q.code === b.dataset.open);
+          if (S.squad?.code && S.squad.code !== x.code && !confirm(`Switch from ${S.squad.name} to ${x.name}? You'll show up as a member there.`)) return;
+          try { await joinSquad(x.code); go('/squad'); } catch (e) { toast('Could not open squad', e.message); }
+        });
+        $$('[data-del]', body).forEach(b => b.onclick = async () => {
+          const x = sq.find(q => q.code === b.dataset.del);
+          if (prompt(`This permanently deletes the squad "${x.name}". Type its code (${x.code}) to confirm.`)?.toUpperCase().replace(/[^A-Z0-9]/g, '') !== x.code) return;
+          try { await FB.f.deleteDoc(fdoc('squads', x.code)); toast('Squad deleted'); draw(); } catch (e) { toast('Could not delete', e.message); }
+        });
+      } else if (tab === 'admins' && ACC.owner) {
+        await loadAdminList();
+        body.innerHTML = `<div class="card"><h3>Owners</h3><p class="muted">Owners are set in the site's code and security rules and always have full access:</p><ul>${OWNER_EMAILS.map(e => `<li class="mono">${esc(e)}</li>`).join('')}</ul>
+          <h3 style="margin-top:20px">Admins</h3><p class="muted">Admins can read feedback, see all users and squads, and act as leader in any squad. They can't add or remove other admins.</p>
+          <ul id="ad-list">${ACC.extraAdmins.map(e => `<li class="spread"><span class="mono">${esc(e)}</span><button class="btn sm ghost" data-rm="${esc(e)}">Remove</button></li>`).join('') || '<li class="muted">No extra admins yet.</li>'}</ul>
+          <form id="ad-add" class="row" style="margin-top:10px"><input class="input" id="ad-email" type="email" placeholder="friend@example.com" style="flex:1;min-width:200px" required><button class="btn primary">Add admin</button></form></div>`;
+        const saveList = async list => { await FB.f.setDoc(fdoc('config', 'admins'), { emails: list }, { merge: true }); await loadAdminList(); draw(); };
+        $('#ad-add', body).onsubmit = ev => { ev.preventDefault(); const e = $('#ad-email', body).value.trim().toLowerCase(); if (e && !ACC.extraAdmins.includes(e)) saveList([...ACC.extraAdmins, e]).then(() => toast('Admin added', e + ' gets admin tools the next time they sign in.')).catch(x => toast('Could not save', x.message)); };
+        $$('[data-rm]', body).forEach(b => b.onclick = () => saveList(ACC.extraAdmins.filter(x => x !== b.dataset.rm)).catch(x => toast('Could not save', x.message)));
+      }
+    } catch (e) {
+      body.innerHTML = `<div class="notice warn"><b>Couldn't load this.</b><br><small>${esc(e.code || e.message)}</small><p style="margin:8px 0 0">If it says "permission denied", the new security rules haven't been published yet. Open Firebase → Firestore Database → Rules, paste in <code>firestore.rules</code> from the repo, and press Publish.</p></div>`;
+    }
+  };
+  $$('[data-t]', view).forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
+  draw();
+});
+
 // ---- views-me.js ----
 /* ================= Profile, settings, help, onboarding ================= */
 const AVATARS = ['🦊', '🐼', '🐸', '🐙', '🦉', '🐧', '🦄', '🐲', '🐺', '🦁', '🐯', '🐨', '🐵', '🦖', '🐢', '🦈', '🐝', '🦋', '👾', '🤖', '👻', '💀', '🧙', '🥷', '🧑‍💻', '🦸', '🧠', '⚡', '🔥', '🌙', '⭐', '🍕', '🌮', '🍩', '🎮', '🎧', '🛹', '⚽', '🏀', '🎸'];
 const COLORS = ['#7c3aed', '#2563eb', '#0891b2', '#16a34a', '#65a30d', '#ca8a04', '#ea580c', '#dc2626', '#db2777', '#9333ea', '#475569', '#0f766e'];
 
+function accountCard() {
+  if (!signedIn()) return `<div class="card acct-card" style="margin-top:16px"><div class="spread"><div><b>🔐 Not signed in</b><br><small class="muted">Your progress is only saved in this browser. Sign in to save it to your account and use squads.</small></div><button class="btn primary" data-acct="in">Sign in</button></div></div>`;
+  return `<div class="card acct-card" style="margin-top:16px"><div class="spread"><div><small class="muted">Signed in as</small><br><b class="mono">${esc(ACC.email)}</b> ${ACC.owner ? '<span class="pill role-owner">👑 Owner</span>' : ACC.admin ? '<span class="pill role-admin">🛡 Admin</span>' : ''}<br><small class="muted">${ACC.verified ? '✅ Email verified · progress saves to your account automatically' : '⚠️ Email not verified yet. Click the link we sent you.'}</small></div>
+    <div class="row">${!ACC.verified ? '<button class="btn sm primary" data-acct="re">I verified it</button><button class="btn sm" data-acct="send">Resend email</button>' : ''}${ACC.admin ? '<a class="btn sm primary" href="#/admin">🛡 Admin panel</a>' : ''}<button class="btn sm ghost" data-acct="out">Sign out</button></div></div></div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-acct]'); if (!b) return;
+  const a = b.dataset.acct;
+  if (a === 'in') { if (S.account?.skip) { S.account = null; save(); } showAuthGate(); }
+  if (a === 'out' && confirm('Sign out? Your progress is saved to your account, and this browser will be cleared.')) authSignOut();
+  if (a === 're') authRecheck().then(() => toast(ACC.verified ? 'Email verified ✅' + (ACC.owner ? ' Owner tools unlocked 👑' : '') : 'Not verified yet. Check your inbox and spam folder.'));
+  if (a === 'send') authResendVerify().then(() => toast('Sent! Check your inbox.')).catch(x => toast('Could not send', authErr(x)));
+});
 route('/profile', (view, p) => {
   const L = levelFor(S.xp), cur = xpForLevel(L), nxt = xpForLevel(L + 1);
   const acc = S.stats.answered ? Math.round(S.stats.correct / S.stats.answered * 100) : 0;
@@ -6091,6 +6385,7 @@ route('/profile', (view, p) => {
     <div class="card"><div class="row" style="gap:20px;align-items:center">${avatarHtml(S.profile, 'lg')}<div style="flex:1;min-width:220px"><h1 style="font-size:2rem;margin:0">${esc(S.profile.name || 'Student')}</h1><div class="muted">${esc(myTitle())} · ${gradeLabel(S.profile.year)}</div>${(S.profile.courses || []).length ? `<div class="row" style="gap:6px;margin-top:8px">${S.profile.courses.filter(id => COURSE[id]).map(id => `<a class="pill" href="#/course/${id}">${COURSE[id].emoji} ${esc(COURSE[id].title)}</a>`).join('')}</div>` : ''}
       <div style="margin-top:12px"><div class="spread"><b class="mono">Level ${L}</b><small class="muted mono">${fmtNum(S.xp - cur)} / ${fmtNum(nxt - cur)} XP to L${L + 1}</small></div><div class="bar" style="height:10px;margin-top:6px"><i style="width:${(S.xp - cur) / (nxt - cur) * 100}%"></i></div></div></div>
       <button class="btn" id="edit-p">✏️ Edit profile</button></div></div>
+    ${squadState().configured ? accountCard() : ''}
     <div class="grid g4" style="margin:16px 0">${[['⭐', fmtNum(S.xp), 'total XP'], ['🔥', `${streakAlive()} / ${S.streak.best}`, 'streak / best'], ['📖', Object.keys(S.lessons).length, 'lessons'], ['🎯', acc + '%', `accuracy (${fmtNum(S.stats.answered)} Qs)`], ['👹', S.stats.bossWins, 'boss wins'], ['🐞', S.stats.bugs, 'bugs found'], ['⚔️', `${S.stats.duelsWon}/${S.stats.duelsPlayed}`, 'duels won'], ['⚡', S.stats.speedBest, 'speed best']].map(([i, v, l]) => `<div class="card" style="padding:14px"><div class="stat"><b>${i} ${v}</b><span>${l}</span></div></div>`).join('')}</div>
     <div class="card" style="margin-bottom:16px"><h3>Activity · last 12 weeks</h3><div style="display:grid;grid-template-rows:repeat(7,12px);grid-auto-flow:column;grid-auto-columns:12px;gap:3px;overflow-x:auto;padding:4px 0" aria-label="Study activity heatmap">${days.map(([d, x]) => `<i title="${d}: ${x} XP" style="border-radius:3px;background:${x ? `color-mix(in srgb,var(--accent) ${Math.min(100, 25 + x / 3)}%,var(--bg3))` : 'var(--bg3)'}"></i>`).join('')}</div></div>
     <h2>Badges <small class="muted mono" style="font-size:1rem">${Object.keys(S.badges).length}/${BADGES.length}</small></h2>
@@ -6243,8 +6538,11 @@ function wireCourseChooser(root, sel) {
 /* ================= Boot ================= */
 applyTheme();
 render();
-if (!S.profile.onboarded) setTimeout(onboarding, 300);
-if (squadState().configured) fbInit();
+if (squadState().configured) {
+  if (!S.account?.email && !S.account?.skip) showAuthGate();   // sign in first; onboarding comes after
+  fbInit();
+}
+if (!S.profile.onboarded && !$('#auth-gate')) setTimeout(onboarding, 300);
 // register service worker for offline use / install (only works when hosted, e.g. GitHub Pages)
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude|claudeusercontent/.test(location.hostname)) {
   navigator.serviceWorker.register('sw.js').catch(() => { });
