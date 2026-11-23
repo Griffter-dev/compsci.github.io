@@ -44,7 +44,7 @@ async function onAuthUser(user) {
     if (was !== user.uid) await cloudLoad();
     await loadAdminList();
     if (S.squad?.code) { refreshSquadMeta(); writeMember(); startBankSync(); startAssignSync(); }
-    flushFeedbackQueue();
+    flushFeedbackQueue(); flushNoteQueue();
     closeAuthGate();
     if (!S.profile.onboarded && !$('.modal')) setTimeout(() => { if (!S.profile.onboarded && !$('.modal')) onboarding(); }, 250);
   }

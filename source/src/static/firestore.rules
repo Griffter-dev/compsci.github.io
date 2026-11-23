@@ -39,6 +39,15 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Class notes suggestions: anyone signed in can send them, and only site owners and admins can read them
+    match /noteSuggestions/{nid} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.text is string && request.resource.data.text.size() <= 20000
+                    && request.resource.data.unit is string && request.resource.data.unit.size() <= 20
+                    && request.resource.data.status == 'new';
+      allow read, update, delete: if isAdmin();
+    }
+
     match /squads/{sid} {
       allow get: if signedIn();            // you must know the 6-letter code to look a squad up
       allow list: if isAdmin();            // only admins can browse all squads

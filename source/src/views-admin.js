@@ -13,7 +13,7 @@ route('/admin', (view) => {
     <div class="spread"><h1 style="font-size:2.2rem;margin:4px 0">🛡 Admin panel</h1><span class="pill ${ACC.owner ? 'role-owner' : 'role-admin'}">${ACC.owner ? '👑 Owner' : '🛡 Admin'} · ${esc(ACC.email)}</span></div>
     <div class="row tabs" style="margin:14px 0" role="tablist">
       <button class="btn sm" data-t="users">👤 Users</button><button class="btn sm" data-t="squads">👥 All squads</button>
-      <a class="btn sm" href="#/feedback/inbox">💬 Feedback inbox</a>${ACC.owner ? '<button class="btn sm" data-t="admins">🛡 Admins</button>' : ''}</div>
+      <a class="btn sm" href="#/feedback/inbox">💬 Feedback inbox</a><a class="btn sm" href="#/class-notes/inbox">🗒️ Notes inbox</a>${ACC.owner ? '<button class="btn sm" data-t="admins">🛡 Admins</button>' : ''}</div>
     <div id="ad-body"><p class="muted">Loading…</p></div></div>`;
   const body = $('#ad-body', view);
   const when = t => t ? new Date(t).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';

@@ -124,7 +124,7 @@ window.addEventListener('hashchange', render);
 /* ---------- Chrome: top bar + mobile tab bar ---------- */
 const NAV = [['/', 'Home', '🏠'], ['/courses', 'Courses', '📚'], ['/assignments', 'Assigned', '📋'], ['/arcade', 'Arcade', '🕹️'], ['/squad', 'Squad', '👥']];
 const NAV_SHORT = { 'AP Exam & FRQs': 'AP Exam', 'Assignments': 'Assigned' };
-const DESK_NAV = [['/courses', 'Courses', '📚'], ['/practice', 'Practice', '🎯'], ['/exam', 'AP Exam & FRQs', '📝'], ['/assignments', 'Assignments', '📋'], ['/arcade', 'Arcade', '🕹️'], ['/squad', 'Squad', '👥'], ['/notes', 'Notes', '🗒️'], ['/feedback', 'Feedback', '💬']];
+const DESK_NAV = [['/courses', 'Courses', '📚'], ['/practice', 'Practice', '🎯'], ['/exam', 'AP Exam & FRQs', '📝'], ['/assignments', 'Assignments', '📋'], ['/arcade', 'Arcade', '🕹️'], ['/squad', 'Squad', '👥'], ['/class-notes', 'Class Notes', '🗒️'], ['/feedback', 'Feedback', '💬']];
 function renderChrome() {
   const p = (location.hash.slice(1) || '/').split('?')[0];
   const active = href => href === '/exam' ? (p.startsWith('/exam') || p.startsWith('/frq')) : href === '/' ? p === '/' : p.startsWith(href) || (href === '/courses' && (p.startsWith('/course') || p.startsWith('/learn') || p.startsWith('/ex/') || p.startsWith('/unit-done')));
@@ -159,7 +159,7 @@ function toggleMenu() {
   const ex = $('.menu'); if (ex) { ex.remove(); return; }
   const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'menu');
   m.innerHTML = `<div style="padding:8px 12px"><b>${esc(S.profile.name || 'Student')}</b><br><small>${esc(myTitle())} · Level ${levelFor(S.xp)}</small></div><hr>
-    ${signedIn() ? `<div class="menu-acct"><small class="muted">Signed in as</small><b>${esc(ACC.email)}</b>${ACC.owner ? '<span class="pill role-owner">👑 Owner</span>' : ACC.admin ? '<span class="pill role-admin">🛡 Admin</span>' : ''}</div>` : ''}${ACC.admin ? '<a href="#/admin" role="menuitem">🛡 Admin panel</a>' : ''}<a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/exam" role="menuitem">📝 AP Exam & FRQs</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/notes" role="menuitem">📝 Notes & cheat sheets</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/feedback?from=${encodeURIComponent(pageLabel())}" role="menuitem">💬 Feedback</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>${signedIn() ? '<a href="#" role="menuitem" data-acct="out">🚪 Sign out</a>' : squadState().configured ? '<a href="#" role="menuitem" data-acct="in">🔐 Sign in</a>' : ''}`;
+    ${signedIn() ? `<div class="menu-acct"><small class="muted">Signed in as</small><b>${esc(ACC.email)}</b>${ACC.owner ? '<span class="pill role-owner">👑 Owner</span>' : ACC.admin ? '<span class="pill role-admin">🛡 Admin</span>' : ''}</div>` : ''}${ACC.admin ? '<a href="#/admin" role="menuitem">🛡 Admin panel</a>' : ''}<a href="#/profile" role="menuitem">👤 Profile & badges</a><a href="#/practice" role="menuitem">🎯 Practice</a><a href="#/exam" role="menuitem">📝 AP Exam & FRQs</a><a href="#/assignments" role="menuitem">📋 Assignments</a><a href="#/class-notes" role="menuitem">🗒️ Class Notes</a><a href="#/glossary" role="menuitem">📖 Glossary</a><a href="#/settings" role="menuitem">🎨 Customize & settings</a><a href="#/feedback?from=${encodeURIComponent(pageLabel())}" role="menuitem">💬 Feedback</a><a href="#/help" role="menuitem">❓ Help & FAQ</a>${signedIn() ? '<a href="#" role="menuitem" data-acct="out">🚪 Sign out</a>' : squadState().configured ? '<a href="#" role="menuitem" data-acct="in">🔐 Sign in</a>' : ''}`;
   document.body.appendChild(m);
   $('a', m).focus();
   const off = e => { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('click', off); } };
@@ -168,7 +168,7 @@ function toggleMenu() {
 }
 function footer() {
   return `<footer class="footer"><div class="cols"><div><b class="mono">CompSci-<span style="color:var(--accent)">Study</span></b><br>Made by students, for students. Free forever.</div>
-  <div><a href="#/courses">Courses</a><a href="#/assignments">Assignments</a><a href="#/arcade">Arcade</a><a href="#/squad">Squad</a><a href="#/notes">Notes</a><a href="#/glossary">Glossary</a><a href="#/feedback">Feedback</a><a href="#/help">Help & FAQ</a><a href="#/settings">Settings</a></div></div></footer>`;
+  <div><a href="#/courses">Courses</a><a href="#/assignments">Assignments</a><a href="#/arcade">Arcade</a><a href="#/squad">Squad</a><a href="#/class-notes">Class Notes</a><a href="#/glossary">Glossary</a><a href="#/feedback">Feedback</a><a href="#/help">Help & FAQ</a><a href="#/settings">Settings</a></div></div></footer>`;
 }
 
 /* ---------- Search (button left of the streak counter, or press / or Ctrl+K) ---------- */
@@ -187,6 +187,7 @@ function buildSearchIndex() {
       if (S.settings.bosses) add('Boss battle', '👹', `${(BOSSES[u.id] || ['Unit boss'])[0]} (boss)`, `${c.title} › ${u.title}`, `#/boss/${u.id}`, 'boss battle fight', -1);
     });
   }
+  for (const n of (window.CLASS_NOTES || [])) { const u = UNIT[n.unit], c = u && COURSE[u.course]; add('Class notes', '🗒️', n.title, `${c ? c.title + ' › ' : ''}${u ? u.title : ''}`, `#/class-notes/${n.unit}`, n.text.slice(0, 1500), 2); }
   for (const f of (window.FRQS || [])) add('FRQ', '✍️', `FRQ: ${f.title}`, `AP CSA · Q${f.q} ${FRQ_TYPES[f.q]}`, `#/frq/${f.id}`, 'free response frq ' + f.scenario.replace(/<[^>]+>/g, ' ').slice(0, 600), 2);
   [['📝', 'AP CSA practice exams', 'Full exam, Section I, mini exam, unit tests', '#/exam', 'ap exam practice test mcq'],
    ['✍️', 'FRQ practice', 'All AP CSA free-response questions', '#/frq', 'frq free response'],
@@ -196,7 +197,7 @@ function buildSearchIndex() {
    ['⚔️', '1v1 Duels', 'Duel ByteBot or a squadmate', '#/duel', 'duel versus'],
    ['📋', 'Assignments', 'Your plan and squad assignments', '#/assignments', 'homework due'],
    ['👥', 'Squad', 'Leaderboard, duels, question bank', '#/squad', 'friends leaderboard'],
-   ['📝', 'Notes & cheat sheets', 'Search and print notes', '#/notes', 'notes cheat sheet print'],
+   ['🗒️', 'Class Notes', 'Notes from class for every course, with questions', '#/class-notes', 'notes class notes cheat sheet print'],
    ['📖', 'Glossary', 'Every CS term in plain English', '#/glossary', 'glossary words definitions'],
    ['💬', 'Feedback', 'Send a suggestion or report a problem', '#/feedback', 'feedback suggestion bug'],
    ['🎨', 'Settings', 'Themes, colors, fonts, sound', '#/settings', 'theme customize settings'],

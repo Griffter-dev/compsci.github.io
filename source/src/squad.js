@@ -196,6 +196,22 @@ async function isFeedbackAdmin() {
   if (ACC.admin) return true;
   try { const s = await FB.f.getDoc(fdoc('config', 'admins')); return s.exists() && (s.data().uids || []).includes(FB.uid); } catch (e) { return false; }
 }
+/* ---------- Class notes suggestions (anyone can send; only admins can read) ---------- */
+async function sendNoteSuggestion(ns) {
+  await fbInit();
+  if (FB.status !== 'ok' || !FB.uid) { S.noteQueue = [...(S.noteQueue || []), ns]; save(); return 'queued'; }
+  await FB.f.addDoc(fcol('noteSuggestions'), { ...ns, uid: FB.uid, status: 'new' });
+  return 'sent';
+}
+async function flushNoteQueue() {
+  if (FB.status !== 'ok' || !FB.uid || !(S.noteQueue || []).length) return;
+  const q = S.noteQueue.slice(); S.noteQueue = []; save();
+  for (const ns of q) { try { await FB.f.addDoc(fcol('noteSuggestions'), { ...ns, uid: FB.uid, status: 'new' }); } catch (e) { S.noteQueue.push(ns); } }
+  save();
+}
+function subNoteSuggestions(cb) { return FB.f.onSnapshot(FB.f.query(fcol('noteSuggestions'), FB.f.orderBy('created', 'desc'), FB.f.limit(300)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => cb(null, e)); }
+const updateNoteSuggestion = (id, data) => FB.f.updateDoc(fdoc('noteSuggestions', id), data);
+const deleteNoteSuggestion = id => FB.f.deleteDoc(fdoc('noteSuggestions', id));
 function subFeedback(cb) { return FB.f.onSnapshot(FB.f.query(fcol('feedback'), FB.f.orderBy('created', 'desc'), FB.f.limit(300)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => cb(null, e)); }
 const updateFeedback = (id, data) => FB.f.updateDoc(fdoc('feedback', id), data);
 const deleteFeedback = id => FB.f.deleteDoc(fdoc('feedback', id));

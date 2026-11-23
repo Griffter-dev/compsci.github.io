@@ -170,6 +170,25 @@ if (fs.existsSync(LUAU_JSON)) { const lc = JSON.parse(fs.readFileSync(LUAU_JSON,
 const LUAU_GLOSS = path.join(ROOT, 'content', 'luau-glossary.json');
 if (fs.existsSync(LUAU_GLOSS)) GLOSSARY.push(...JSON.parse(fs.readFileSync(LUAU_GLOSS, 'utf8')));
 
+// ---- Class notes: content/class-notes/*.md, one file per class day ----
+const CLASS_NOTES = [];
+const CN_DIR = path.join(ROOT, 'content', 'class-notes');
+if (fs.existsSync(CN_DIR)) for (const f of fs.readdirSync(CN_DIR).filter(f => f.endsWith('.md')).sort()) {
+  const text = fs.readFileSync(path.join(CN_DIR, f), 'utf8').replace(/<!--[\s\S]*?-->/g, '');
+  const m = text.match(/^# NOTES (.*)$/m); if (!m) { errors.push(`class-notes/${f}: missing "# NOTES unit | date | title" line`); continue; }
+  const [unit, date, title] = m[1].split('|').map(s => s.trim());
+  if (!UNITS_ALL[unit] && !courses.some(c => c.units.some(u => u.id === unit))) errors.push(`class-notes/${f}: unknown unit ${unit}`);
+  let body = text.slice(text.indexOf(m[0]) + m[0].length);
+  let qtext = '';
+  const qi = body.search(/^### QUESTIONS\s*$/m);
+  if (qi >= 0) { qtext = body.slice(qi).replace(/^### QUESTIONS\s*$/m, ''); body = body.slice(0, qi); }
+  const id = `cn-${unit}-${date}`;
+  const questions = parseQuestions(qtext.split('\n'), 'quiz', id).map((q, i) => ({ ...q, id: `${id}-q${i + 1}`, kind: 'mcq', type: 'quiz' }));
+  const md = body.trim();
+  CLASS_NOTES.push({ id, unit, date, title, html: marked.parse(prepMd(md)), text: md.replace(/<[^>]+>/g, ' ').replace(/[`*#>|_-]/g, ' ').replace(/\s+/g, ' '), questions });
+}
+console.log('class notes', CLASS_NOTES.length, CLASS_NOTES.map(n => n.id + ':' + n.questions.length + 'q').join(' '));
+
 // stats
 let nL = 0, nQ = 0, nT = 0, nB = 0, nU = 0, nE = 0, nF = 0;
 for (const c of courses) for (const u of c.units) { nU++; nL += u.lessons.length; nQ += u.quiz.length; nT += u.trace.length; nB += u.bug.length; nE += u.ex.length; nF += u.fill.length; }
@@ -179,9 +198,9 @@ if (process.env.DUMP_EX) fs.writeFileSync(process.env.DUMP_EX, JSON.stringify(co
 if (errors.length) { console.error('CONTENT ERRORS:\n' + errors.join('\n')); process.exit(1); }
 
 const read = f => fs.readFileSync(path.join(ROOT, 'src', f), 'utf8');
-const jsOrder = ['luau-engine.js', 'core.js', 'ui.js', 'glossary.js', 'runner.js', 'engine.js', 'views-learn.js', 'views-study.js', 'views-assign.js', 'views-exam.js', 'views-feedback.js', 'views-arcade.js', 'squad.js', 'account.js', 'views-squad.js', 'views-admin.js', 'views-me.js', 'main.js'];
+const jsOrder = ['luau-engine.js', 'core.js', 'ui.js', 'glossary.js', 'runner.js', 'engine.js', 'views-learn.js', 'views-study.js', 'views-assign.js', 'views-exam.js', 'views-feedback.js', 'views-notes.js', 'views-arcade.js', 'squad.js', 'account.js', 'views-squad.js', 'views-admin.js', 'views-me.js', 'main.js'];
 const js = jsOrder.map(f => `// ---- ${f} ----\n` + read(f)).join('\n');
-const contentJs = 'window.COURSES = ' + JSON.stringify(courses).replace(/<\/(script)/gi, '<\\/$1') + ';\nwindow.GLOSSARY = ' + JSON.stringify(GLOSSARY) + ';\nwindow.FRQS = ' + JSON.stringify(FRQS).replace(/<\/(script)/gi, '<\\/$1') + ';';
+const contentJs = 'window.COURSES = ' + JSON.stringify(courses).replace(/<\/(script)/gi, '<\\/$1') + ';\nwindow.CLASS_NOTES = ' + JSON.stringify(CLASS_NOTES).replace(/<\/(script)/gi, '<\\/$1') + ';\nwindow.GLOSSARY = ' + JSON.stringify(GLOSSARY) + ';\nwindow.FRQS = ' + JSON.stringify(FRQS).replace(/<\/(script)/gi, '<\\/$1') + ';';
 console.log('glossary terms', GLOSSARY.length, '· frqs', FRQS.length, FRQS.map(f => f.id + ':' + f.parts.reduce((n, p) => n + p.points, 0)).join(' '));
 let html = read('index.html')
   .replace('/*__CSS__*/', () => read('styles.css') + '\n' + read('luau.css'))
