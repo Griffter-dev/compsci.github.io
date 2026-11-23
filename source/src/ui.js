@@ -123,6 +123,7 @@ window.addEventListener('hashchange', render);
 
 /* ---------- Chrome: top bar + mobile tab bar ---------- */
 const NAV = [['/', 'Home', '🏠'], ['/courses', 'Courses', '📚'], ['/assignments', 'Assigned', '📋'], ['/arcade', 'Arcade', '🕹️'], ['/squad', 'Squad', '👥']];
+const NAV_SHORT = { 'AP Exam & FRQs': 'AP Exam', 'Assignments': 'Assigned' };
 const DESK_NAV = [['/courses', 'Courses', '📚'], ['/practice', 'Practice', '🎯'], ['/exam', 'AP Exam & FRQs', '📝'], ['/assignments', 'Assignments', '📋'], ['/arcade', 'Arcade', '🕹️'], ['/squad', 'Squad', '👥'], ['/notes', 'Notes', '🗒️'], ['/feedback', 'Feedback', '💬']];
 function renderChrome() {
   const p = (location.hash.slice(1) || '/').split('?')[0];
@@ -132,7 +133,7 @@ function renderChrome() {
   const st = streakAlive(), L = levelFor(S.xp);
   $('#topbar').innerHTML = `
     <a class="logo" href="#/" aria-label="CompSci-Study home"><span class="mark">&gt;_</span><span>CompSci-<b>Study</b></span></a>
-    <nav class="navlinks" aria-label="Main">${DESK_NAV.map(([h, n, i]) => `<a href="#${h === '/feedback' ? '/feedback?from=' + encodeURIComponent(pageLabel()) : h}" class="${active(h) ? 'on' : ''}" title="${n}"><span class="ni" aria-hidden="true">${i}</span><span class="nl">${n}</span>${tag(h)}</a>`).join('')}</nav>
+    <nav class="navlinks" aria-label="Main">${DESK_NAV.map(([h, n, i]) => `<a href="#${h === '/feedback' ? '/feedback?from=' + encodeURIComponent(pageLabel()) : h}" class="${active(h) ? 'on' : ''}" title="${n}"><span class="ni" aria-hidden="true">${i}</span><span class="nl">${n}</span><span class="ns">${NAV_SHORT[n] || n}</span>${tag(h)}</a>`).join('')}</nav>
     <div class="topright">
       <button class="chip search-btn" id="search-btn" aria-label="Search lessons, practices and units (shortcut: /)" title="Search  ( / )">🔍 <span class="search-lbl">Search</span><kbd>/</kbd></button>
       <span class="chip" title="Day streak">🔥 ${st}</span>

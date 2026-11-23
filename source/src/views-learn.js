@@ -35,7 +35,7 @@ route('/', (view) => {
         </div>
       </div>
       <div class="term" aria-label="Today's progress">
-        <div class="tbar"><i></i><i></i><i></i><span>${esc((S.profile.name || 'student').toLowerCase().replace(/\s+/g, ''))}@compci:~</span></div>
+        <div class="tbar"><i></i><i></i><i></i><span>${esc((S.profile.name || 'student').toLowerCase().replace(/\s+/g, ''))}@compsci-study:~</span></div>
         <div class="tbody"><span class="prompt">$</span> today --goal
 Daily goal: ${Math.min(todayXp, goal)}/${goal} XP ${todayXp >= goal ? '✓ done!' : ''}
 [${'█'.repeat(Math.round(Math.min(1, todayXp / goal) * 20))}${'░'.repeat(20 - Math.round(Math.min(1, todayXp / goal) * 20))}]
