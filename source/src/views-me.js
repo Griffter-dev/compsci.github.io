@@ -8,7 +8,7 @@ function accountCard() {
     <div class="row">${!ACC.verified ? '<button class="btn sm primary" data-acct="re">I verified it</button><button class="btn sm" data-acct="send">Resend email</button>' : ''}${ACC.admin ? '<a class="btn sm primary" href="#/admin">🛡 Admin panel</a>' : ''}<button class="btn sm ghost" data-acct="out">Sign out</button></div></div></div>`;
 }
 document.addEventListener('click', e => {
-  const b = e.target.closest('[data-acct]'); if (!b) return;
+  const b = e.target.closest('[data-acct]'); if (!b) return; e.preventDefault();
   const a = b.dataset.acct;
   if (a === 'in') { if (S.account?.skip) { S.account = null; save(); } showAuthGate(); }
   if (a === 'out' && confirm('Sign out? Your progress is saved to your account, and this browser will be cleared.')) authSignOut();

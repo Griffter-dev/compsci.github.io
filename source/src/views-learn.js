@@ -225,7 +225,30 @@ route('/boss/:uid', (view, p) => {
   });
 });
 
-/* ---------- Cheat sheets (the old Notes page is now Class Notes, in views-notes.js) ---------- */
+/* ---------- Notes & cheat sheets ---------- */
+route('/notes', (view, p) => {
+  view.innerHTML = `<div class="wrap"><span class="eyebrow">// notes</span><h1 style="font-size:2.2rem">Notes & cheat sheets</h1>
+    <input class="input" id="n-q" type="search" placeholder="Search all notes, like 'binary search' or 'substring'" value="${esc(p.q || '')}" aria-label="Search notes" style="font-size:1.1rem;padding:14px 16px;margin:10px 0 20px">
+    <div id="n-res"></div>
+    <div id="n-browse">${COURSES.map(c => `<div class="card" style="margin-bottom:14px"><div class="spread"><h3>${c.emoji} ${esc(c.title)}</h3><a class="btn sm" href="#/cheatsheet/${c.id}">🖨 Whole course</a></div>
+      <div class="grid g2" style="margin-top:10px">${c.units.map(u => `<div><b>${esc(u.title)}</b> <a href="#/cheatsheet/${u.id}" style="font-size:.85rem">cheat sheet</a><ul style="margin:6px 0;padding-left:1.2em">${u.lessons.map((l, i) => `<li><a href="#/learn/${u.id}/${i}">${esc(l.title)}</a></li>`).join('')}</ul></div>`).join('')}</div></div>`).join('')}</div></div>${footer()}`;
+  const inp = $('#n-q', view);
+  const doSearch = () => {
+    const q = inp.value.trim().toLowerCase(); const res = $('#n-res', view);
+    $('#n-browse', view).classList.toggle('hidden', !!q);
+    if (!q) { res.innerHTML = ''; return; }
+    const terms = q.split(/\s+/).filter(Boolean);
+    const hits = [];
+    for (const c of COURSES) for (const u of c.units) u.lessons.forEach((l, i) => {
+      const hay = (l.title + ' ' + l.text).toLowerCase();
+      if (terms.every(t => hay.includes(t))) { const idx = hay.indexOf(terms[0]); hits.push({ c, u, l, i, score: (l.title.toLowerCase().includes(q) ? 10 : 0) + terms.length, snip: l.text.slice(Math.max(0, idx - (l.title.length + 60)), idx - l.title.length + 140) }); }
+    });
+    hits.sort((a, b) => b.score - a.score);
+    const mark = s => { let h = esc(s); for (const t of terms) h = h.replace(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<mark>${m}</mark>`); return h; };
+    res.innerHTML = hits.length ? `<p class="muted">${hits.length} result${hits.length === 1 ? '' : 's'}</p><div class="stack">${hits.slice(0, 30).map(h => `<a class="card hover search-hit" href="#/learn/${h.u.id}/${h.i}"><small class="muted">${h.c.emoji} ${esc(h.c.title)} · ${esc(h.u.title)}</small><h3 style="margin:4px 0">${mark(h.l.title)}</h3><small>…${mark(h.snip)}…</small></a>`).join('')}</div>` : `<div class="empty"><span class="big">🔍</span>No notes match "${esc(q)}".</div>`;
+  };
+  inp.oninput = doSearch; doSearch(); inp.focus();
+});
 route('/cheatsheet/:id', (view, p) => {
   if (COURSE[p.id] && COURSE[p.id].cheatsheet) { const cc = COURSE[p.id]; view.innerHTML = `<div class="wrap"><div class="spread noprint"><a href="#/course/${cc.id}">← ${esc(cc.title)}</a><button class="btn primary" onclick="print()">🖨 Print / Save as PDF</button></div><h1 style="font-size:2rem;margin-top:16px">${cc.emoji} ${esc(cc.title)}: cheat sheet</h1>${cc.cheatsheet}</div>`; return; }
   const c = COURSE[p.id], u = UNIT[p.id];

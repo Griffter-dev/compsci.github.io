@@ -8,6 +8,17 @@ const OWNER_EMAILS = ['francescovic0525@gmail.com', '129fcapone@frhsd.com'];
 const ACC = { user: null, email: '', verified: false, owner: false, admin: false, extraAdmins: [], ready: false };
 const signedIn = () => !!(ACC.user && !ACC.user.isAnonymous);
 
+// Owner email signed in with a password but not verified yet: show a banner and keep checking.
+function ownerBanner() {
+  let b = $('#owner-banner');
+  const need = signedIn() && !ACC.verified && (OWNER_EMAILS.includes(ACC.email) || ACC.extraAdmins.includes(ACC.email));
+  if (!need) { b?.remove(); return; }
+  if (!b) { b = document.createElement('div'); b.id = 'owner-banner'; b.className = 'owner-banner noprint'; document.body.prepend(b); }
+  b.innerHTML = `<span>👑 <b>One step to unlock owner tools:</b> open the email we sent to <b>${esc(ACC.email)}</b> and click the verification link. Check spam too.</span>
+    <span class="row" style="gap:6px"><button class="btn sm primary" data-acct="re">I clicked it</button><button class="btn sm" data-acct="send">Resend email</button></span>`;
+}
+setInterval(() => { if (signedIn() && !ACC.verified && FB.auth?.currentUser) authRecheck().catch(() => { }); }, 20000);
+window.addEventListener('focus', () => { if (signedIn() && !ACC.verified && FB.auth?.currentUser) authRecheck().catch(() => { }); });
 function computeRoles() {
   const u = ACC.user;
   ACC.email = (u && !u.isAnonymous && u.email || '').toLowerCase();
@@ -15,6 +26,7 @@ function computeRoles() {
   ACC.owner = !!(ACC.email && ACC.verified && OWNER_EMAILS.includes(ACC.email));
   ACC.admin = ACC.owner || !!(ACC.email && ACC.verified && ACC.extraAdmins.includes(ACC.email));
   S.account = signedIn() ? { email: ACC.email, uid: u.uid } : (S.account?.skip ? S.account : null);
+  if (typeof document !== 'undefined') setTimeout(ownerBanner, 0);
 }
 
 async function loadAdminList() {
@@ -115,7 +127,7 @@ async function authGoogle() {
 }
 async function authReset(email) { await FB.a.sendPasswordResetEmail(FB.auth, email); }
 async function authResendVerify() { if (FB.auth?.currentUser) await FB.a.sendEmailVerification(FB.auth.currentUser); }
-async function authRecheck() { if (!FB.auth?.currentUser) return; await FB.auth.currentUser.reload(); await FB.auth.currentUser.getIdToken(true); ACC.user = FB.auth.currentUser; computeRoles(); await loadAdminList(); renderChrome(); render(); }
+async function authRecheck() { if (!FB.auth?.currentUser) return; const was = ACC.admin; await FB.auth.currentUser.reload(); await FB.auth.currentUser.getIdToken(true); ACC.user = FB.auth.currentUser; computeRoles(); await loadAdminList(); if (ACC.admin !== was) { renderChrome(); render(); if (ACC.owner) toast('👑 Owner tools unlocked', 'Find the Admin panel in your avatar menu.'); } }
 async function authSignOut() {
   await cloudSave(true);
   try { stopBankSync?.(); stopAssignSync?.(); } catch (e) { }
